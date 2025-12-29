@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>孩子獎勵抽抽樂 (公眾版)</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .container {
+            background: #34495e;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h1 { margin: 0 0 15px 0; font-size: 24px;}
+        
+        .odds-table {
+            width: 100%;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #bdc3c7;
+            border-collapse: collapse;
+        }
+        .odds-table td { padding: 4px; border-bottom: 1px solid #46607a; }
+        
+        button {
+            border: none;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            touch-action: manipulation;
+        }
+        .btn-draw { background-color: #f1c40f; color: #2c3e50; box-shadow: 0 4px 0 #d4ac0d; }
+        .btn-draw:active { transform: translateY(4px); box-shadow: none; }
+        .btn-draw:disabled { background-color: #95a5a6; box-shadow: none; cursor: not-allowed; }
+
+        #result-card {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            min-height: 80px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .tier-label { font-size: 18px; opacity: 0.9; margin-bottom: 5px; }
+        .reward-text { font-size: 24px; font-weight: bold; line-height: 1.3; }
+
+        .rank-common { background: #ecf0f1; color: #7f8c8d; border: 2px solid #bdc3c7; text-shadow: none; }
+        .rank-uncommon { background: #2ecc71; color: white; border: 2px solid #27ae60; box-shadow: 0 0 10px #2ecc71; }
+        .rank-rare { background: #3498db; color: white; border: 2px solid #2980b9; box-shadow: 0 0 15px #3498db; }
+        .rank-epic { background: #9b59b6; color: white; border: 2px solid #8e44ad; box-shadow: 0 0 20px #9b59b6; }
+        .rank-legendary { background: #e67e22; color: white; border: 2px solid #d35400; box-shadow: 0 0 25px #e67e22, 0 0 50px #e67e22; }
+        .rank-mythic { background: #e74c3c; color: white; border: 2px solid #c0392b; box-shadow: 0 0 30px #e74c3c, 0 0 60px #e74c3c, inset 0 0 20px white; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .history {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #95a5a6;
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: left;
+            border-top: 1px solid #46607a;
+            padding-top: 10px;
+        }
+        .history div { margin-bottom: 5px; border-bottom: 1px dashed #46607a; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎁 孩子獎勵抽抽樂</h1>
+    
+    <table class="odds-table">
+        <tr><td style="color:#ecf0f1">普通 (60%)</td><td style="color:#2ecc71">罕見 (20%)</td></tr>
+        <tr><td style="color:#3498db">稀有 (10%)</td><td style="color:#9b59b6">史詩 (6%)</td></tr>
+        <tr><td style="color:#e67e22">傳奇 (3%)</td><td style="color:#e74c3c; font-weight:bold;">神話 (1%)</td></tr>
+    </table>
+
+    <div id="result-card" style="display:none;">
+        <div class="tier-label"></div>
+        <div class="reward-text"></div>
+    </div>
+    
+    <button id="drawBtn" class="btn-draw" onclick="draw()">🚀 試手氣</button>
+
+    <div class="history" id="historyLog">
+        本局紀錄：
+    </div>
+</div>
+
+<script>
+    // 定義獎項與機率
+    const tiers = [
+        { 
+            name: '普通', 
+            class: 'rank-common', 
+            probability: 60, 
+            colorCode: '#ecf0f1',
+            confetti: false,
+            rewards: ['小日記減少一行','假日玩電動加5分鐘','假日爸爸陪玩電動5分鐘','減少看書時間5分鐘']
+        },
+        { 
+            name: '罕見', 
+            class: 'rank-uncommon', 
+            probability: 20, 
+            colorCode: '#2ecc71',
+            confetti: false,
+            rewards: ['小日記減少二行','假日玩電動加10分鐘','假日爸爸陪玩電動10分鐘','減少看書時間10分鐘']
+        },
+        { 
+            name: '稀有', 
+            class: 'rank-rare', 
+            probability: 10, 
+            colorCode: '#3498db',
+            confetti: true, // 彩帶特效
+            rewards: ['小日記減少三行','假日玩電動加15分鐘','假日爸爸陪玩電動15分鐘','減少看書時間15分鐘','媽媽陪睡覺']
+        },
+        { 
+            name: '史詩', 
+            class: 'rank-epic', 
+            probability: 6, 
+            colorCode: '#9b59b6',
+            confetti: true,
+            rewards: ['小日記減少四行','平日可玩電動10分鐘','假日爸爸陪玩電動15分鐘']
+        },
+        { 
+            name: '傳奇', 
+            class: 'rank-legendary', 
+            probability: 3, 
+            colorCode: '#e67e22',
+            confetti: true,
+            rewards: ['平日可玩電動15分鐘','零用錢100元']
+        },
+        { 
+            name: '神話', 
+            class: 'rank-mythic', 
+            probability: 1, 
+            colorCode: '#e74c3c',
+            confetti: true,
+            rewards: ['平日可玩電動30分鐘','可任意選購500元內的小禮物']
+        }
+    ];
+
+    function draw() {
+        const btn = document.getElementById('drawBtn');
+        const card = document.getElementById('result-card');
+        const tierLabel = card.querySelector('.tier-label');
+        const rewardText = card.querySelector('.reward-text');
+        
+        // 鎖定按鈕
+        btn.disabled = true;
+        
+        // 顯示卡片並初始化
+        card.style.display = 'flex';
+        card.className = '';
+        card.style.backgroundColor = '#34495e';
+        
+        tierLabel.innerText = "🎲";
+        tierLabel.style.fontSize = "30px";
+        rewardText.innerText = "抽選中...";
+        rewardText.style.fontSize = "16px";
+        
+        // 閃爍動畫
+        let flashCount = 0;
+        const flashInterval = setInterval(() => {
+            const randomTier = tiers[Math.floor(Math.random() * tiers.length)];
+            card.style.color = randomTier.colorCode; 
+            flashCount++;
+            
+            if (flashCount > 10) { 
+                clearInterval(flashInterval);
+                finishDraw(card, btn);
+            }
+        }, 80);
+    }
+
+    function finishDraw(card, btn) {
+        // 1. 決定稀有度
+        const rand = Math.random() * 100;
+        let cumulative = 0;
+        let selectedTier = null;
+
+        for (let tier of tiers) {
+            cumulative += tier.probability;
+            if (rand < cumulative) {
+                selectedTier = tier;
+                break;
+            }
+        }
+        if (!selectedTier) selectedTier = tiers[0];
+
+        // 2. 決定具體獎勵
+        const randomReward = selectedTier.rewards[Math.floor(Math.random() * selectedTier.rewards.length)];
+
+        // 3. 顯示結果
+        card.style.color = '';
+        card.className = selectedTier.class;
+        
+        const tierLabel = card.querySelector('.tier-label');
+        const rewardText = card.querySelector('.reward-text');
+        
+        tierLabel.innerText = selectedTier.name;
+        tierLabel.style.fontSize = "18px";
+        rewardText.innerText = randomReward;
+        rewardText.style.fontSize = "26px";
+
+        // 4. 觸發特效
+        if (selectedTier.confetti) {
+            triggerConfetti();
+        }
+
+        // 5. 寫入畫面紀錄
+        const history = document.getElementById('historyLog');
+        const p = document.createElement('div');
+        const timeStr = new Date().toLocaleTimeString();
+        // 移除事由，只顯示時間和獎項
+        p.innerHTML = `<span style="color:#bdc3c7">[${timeStr}]</span> <span style="color:${selectedTier.colorCode}">${selectedTier.name} - ${randomReward}</span>`;
+        history.insertBefore(p, history.children[0].nextSibling); // 插在標題下方
+
+        // 6. 解鎖按鈕
+        btn.disabled = false;
+        btn.innerText = "🔄 再抽一次";
+    }
+
+    // 彩帶特效
+    function triggerConfetti() {
+        var count = 200;
+        var defaults = { origin: { y: 0.7 } };
+
+        function fire(particleRatio, opts) {
+            confetti(Object.assign({}, defaults, opts, {
+                particleCount: Math.floor(count * particleRatio)
+            }));
+        }
+
+        fire(0.25, { spread: 26, startVelocity: 55, });
+        fire(0.2, { spread: 60, });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45, });
+    }
+</script>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 雲端整合版</title>
+    <title>超級幸運抽抽樂 - Email雲端版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -45,7 +45,7 @@
         .login-card {
             background: white; padding: 30px; border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 85%; max-width: 350px;
+            width: 80%; max-width: 350px;
         }
         .login-input {
             width: 100%; padding: 12px; margin: 8px 0;
@@ -64,8 +64,7 @@
             font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
         }
         #loadingMsg { color: #888; margin-top: 10px; font-size: 0.9rem; display: none; }
-        #loginError { color: red; font-size: 0.8rem; margin-top: 10px; min-height: 1.2em; }
-
+        
         .user-bar {
             background: #2d3436; color: white; padding: 8px 15px;
             display: flex; justify-content: space-between; align-items: center;
@@ -198,7 +197,7 @@
         </div>
 
         <div id="loadingMsg">資料讀取中...</div>
-        <p id="loginError"></p>
+        <p id="loginError" style="color:red; font-size:0.8rem; margin-top:15px; min-height: 1.2em;"></p>
     </div>
 </div>
 
@@ -277,7 +276,7 @@
     <div class="admin-box">
         <h3>💰 發放點數</h3>
         <input type="text" id="reasonIn" class="admin-input" placeholder="原因">
-        <input type="number" id="pointsIn" class="admin-input" placeholder="點數">
+        <input type="number" id="pointsIn" class="admin-input" placeholder="點數" value="50">
         <button class="btn-admin" onclick="addPoints()">發放</button>
     </div>
 
@@ -452,12 +451,12 @@
     const INTEREST_HOUR = 20;              
     const FIXED_DEPOSIT_DAYS = 30; 
 
-    // 預設資料 (完整保留 v13 預設)
+    // 預設資料
     const DEFAULT_TIERS = [
         { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
         { id: 'uncommon', index: 1, name: '罕見', color: '#00b894', chance: 20, rewards: ['小日記減少二行', '假日玩電動加10分鐘', '假日爸爸陪玩電動10分鐘', '減少看書時間10分鐘'] },
         { id: 'rare', index: 2, name: '稀有', color: '#0984e3', chance: 10, rewards: ['小日記減少三行', '假日玩電動加15分鐘', '假日爸爸陪玩電動15分鐘', '減少看書時間15分鐘', '媽媽陪睡覺'] },
-        { id: 'epic', index: 3, name: '史詩', color: '#6c5ce7', chance: 6, rewards: ['小日記減少四行', '平日可玩電動10分鐘', '假日爸爸陪玩電動30分鐘', '增加點數200點'] },
+        { id: 'epic', index: 3, name: '史詩', color: '#6c5ce7', chance: 6, rewards: ['小日記減少四行', '平日可玩電動10分鐘', '假日爸爸陪玩電動15分鐘', '增加點數200點'] },
         { id: 'legendary', index: 4, name: '傳奇', color: '#e17055', chance: 3, rewards: ['平日可玩電動15分鐘', '零用錢100元', '增加點數300點'] },
         { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '可任意選購500元內的小禮物', '打手心處罰減免一次', '增加點數500點'] }
     ];
@@ -704,7 +703,15 @@
         let html = '';
         data.deposits.forEach(d => {
             const end = new Date(d.endDate); const isMature = now >= end; const timeLeft = end - now;
-            let timeStr = isMature ? "✅ 已到期，可領回" : `⏳ 鎖定中 (剩 ${Math.floor(timeLeft / (1000 * 60 * 60 * 24))}天)`;
+            let timeStr = "";
+            if (isMature) {
+                timeStr = "✅ 已到期，可領回";
+            } else {
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                timeStr = `⏳ 鎖定中 (剩 ${days}天 ${hours}時 ${mins}分)`;
+            }
             const profit = Math.floor(d.amount * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS);
             html += `<div class="deposit-item"><div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894; font-size:0.9rem;">(預期+${profit})</span></div><div class="deposit-time">${timeStr}</div><button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature ? '' : 'disabled'}>${isMature ? '💰 立即領取' : '未到期'}</button></div>`;
         });

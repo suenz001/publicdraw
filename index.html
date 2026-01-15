@@ -3,277 +3,781 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>孩子獎勵抽抽樂 (公眾版)</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
+    <title>超級幸運抽抽樂 - Email雲端版</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #2c3e50;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            flex-direction: column;
-            padding: 10px;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        :root {
+            --bg-color: #f0f2f5;
+            --header-bg: #ffffff;
+            --text-color: #333333;
+            --primary: #4a90e2;
+            --success: #00b894;
+            --danger: #d63031;
+            --warning: #f1c40f;
+            
+            --common: #95a5a6;
+            --uncommon: #00b894;
+            --rare: #0984e3;
+            --epic: #6c5ce7;
+            --legendary: #e17055;
+            --mythic: #d63031;
         }
-        .container {
-            background: #34495e;
-            padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 450px;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+            padding-bottom: 60px;
+        }
+
+        /* === 🔴 新增：登入介面樣式 === */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             text-align: center;
         }
-        h1 { margin: 0 0 15px 0; font-size: 24px;}
-        
-        .odds-table {
-            width: 100%;
-            margin: 10px 0;
-            font-size: 13px;
-            color: #bdc3c7;
-            border-collapse: collapse;
+        .login-card {
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 80%; max-width: 350px;
         }
-        .odds-table td { padding: 4px; border-bottom: 1px solid #46607a; }
+        .login-input {
+            width: 100%; padding: 12px; margin: 8px 0;
+            border: 1px solid #ccc; border-radius: 8px;
+            box-sizing: border-box; font-size: 1rem;
+        }
+        .btn-group-login {
+            display: flex; gap: 10px; margin-top: 15px;
+        }
+        .btn-login {
+            flex: 1; background: #4a90e2; color: white; border: none; padding: 12px;
+            font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        .btn-register {
+            flex: 1; background: #00b894; color: white; border: none; padding: 12px;
+            font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        #loadingMsg { color: #888; margin-top: 10px; font-size: 0.9rem; display: none; }
         
-        button {
-            border: none;
-            padding: 15px;
-            font-size: 20px;
-            font-weight: bold;
+        .user-bar {
+            background: #2d3436; color: white; padding: 8px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.85rem;
+        }
+        .btn-logout {
+            background: #d63031; border: none; color: white;
+            padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+        }
+
+        /* === Header === */
+        .header {
+            background: var(--header-bg);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .points-val { font-size: 3rem; font-weight: 800; color: #fab1a0; margin: 5px 0; }
+        .points-label { font-size: 0.9rem; color: #888; font-weight: bold; }
+
+        /* === Navigation === */
+        .nav {
+            display: flex;
+            background: white;
+            margin: 15px;
             border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 5px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: #888;
+            font-weight: bold;
             cursor: pointer;
-            width: 100%;
-            margin-top: 20px;
-            touch-action: manipulation;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
         }
-        .btn-draw { background-color: #f1c40f; color: #2c3e50; box-shadow: 0 4px 0 #d4ac0d; }
-        .btn-draw:active { transform: translateY(4px); box-shadow: none; }
-        .btn-draw:disabled { background-color: #95a5a6; box-shadow: none; cursor: not-allowed; }
+        .nav-btn.active { background: #dfe6e9; color: #2d3436; }
 
-        #result-card {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            display: none; 
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            min-height: 80px;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        /* === Sections === */
+        .section { display: none; padding: 10px 20px; max-width: 600px; margin: 0 auto; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* === Gacha Roulette === */
+        .roulette-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .roulette-box {
+            background: #e9ecef; border-radius: 12px; padding: 20px 5px; text-align: center;
+            font-weight: 800; font-size: 1.2rem; opacity: 0.6; color: #555;
+            border: 3px solid transparent; border-bottom-width: 5px;
+            display: flex; flex-direction: column; justify-content: center; min-height: 80px;
         }
+        .roulette-box span { font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8; }
+        .roulette-box.active { opacity: 1; transform: scale(1.05); background: #fff; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 10; }
+
+        /* Color Bindings */
+        .box-common { border-color: var(--common); } .box-common.active { color: var(--common); }
+        .box-uncommon { border-color: var(--uncommon); } .box-uncommon.active { color: var(--uncommon); }
+        .box-rare { border-color: var(--rare); } .box-rare.active { color: var(--rare); }
+        .box-epic { border-color: var(--epic); } .box-epic.active { color: var(--epic); }
+        .box-legendary { border-color: var(--legendary); } .box-legendary.active { color: var(--legendary); }
+        .box-mythic { border-color: var(--mythic); } .box-mythic.active { color: var(--mythic); }
+
+        /* Buttons */
+        .big-btn { width: 100%; padding: 18px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; border: none; background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); color: white; box-shadow: 0 4px 10px rgba(9, 132, 227, 0.4); cursor: pointer; margin-top: 15px; }
+        .big-btn:disabled { background: #b2bec3; box-shadow: none; cursor: not-allowed; }
+
+        /* Results & Lists */
+        #finalResult { margin-top: 25px; padding: 20px; border-radius: 15px; text-align: center; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+        .list-item { background: white; border-left: 6px solid #ccc; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .btn-use { background: #ff7675; color: white; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+        /* Pity Info */
+        .pity-info { background: #fff8e1; color: #d35400; padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-top: 20px; text-align: center; border: 1px solid #ffe0b2; }
+
+        /* === Bank Section Styles === */
+        .bank-card { background: linear-gradient(135deg, #00b09b, #96c93d); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,176,155,0.3); }
+        .bank-rate { font-size: 1.5rem; font-weight: bold; }
+        .bank-desc { font-size: 0.9rem; opacity: 0.9; margin-bottom: 10px; }
+        .bank-timer { font-family: monospace; font-size: 1.1rem; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; margin-top: 10px; display: inline-block; font-weight: bold;}
         
-        .tier-label { font-size: 18px; opacity: 0.9; margin-bottom: 5px; }
-        .reward-text { font-size: 24px; font-weight: bold; line-height: 1.3; }
+        .deposit-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .deposit-input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; font-size: 1.2rem; box-sizing: border-box; text-align: center; }
+        .btn-deposit { width: 100%; padding: 12px; background: #00b894; color: white; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
 
-        .rank-common { background: #ecf0f1; color: #7f8c8d; border: 2px solid #bdc3c7; text-shadow: none; }
-        .rank-uncommon { background: #2ecc71; color: white; border: 2px solid #27ae60; box-shadow: 0 0 10px #2ecc71; }
-        .rank-rare { background: #3498db; color: white; border: 2px solid #2980b9; box-shadow: 0 0 15px #3498db; }
-        .rank-epic { background: #9b59b6; color: white; border: 2px solid #8e44ad; box-shadow: 0 0 20px #9b59b6; }
-        .rank-legendary { background: #e67e22; color: white; border: 2px solid #d35400; box-shadow: 0 0 25px #e67e22, 0 0 50px #e67e22; }
-        .rank-mythic { background: #e74c3c; color: white; border: 2px solid #c0392b; box-shadow: 0 0 30px #e74c3c, 0 0 60px #e74c3c, inset 0 0 20px white; animation: pulse 1s infinite; }
+        .deposit-item { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; overflow: hidden; }
+        .deposit-item::before { content: "🔒"; position: absolute; right: -10px; top: -10px; font-size: 3rem; opacity: 0.1; }
+        .deposit-header { display: flex; justify-content: space-between; font-weight: bold; color: #2d3436; margin-bottom: 5px; }
+        .deposit-time { font-size: 0.85rem; color: #636e72; }
+        .btn-redeem { width: 100%; margin-top: 10px; padding: 8px; background: #fdcb6e; color: #d35400; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-redeem:disabled { background: #dfe6e9; color: #b2bec3; cursor: not-allowed; }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
+        /* Admin Styles */
+        .admin-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-admin { background: #0984e3; color: white; padding: 10px; width: 100%; border: none; border-radius: 5px; cursor: pointer; }
+        
+        /* Prize Manager Styles */
+        .prize-manage-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
+        .btn-mini-del { background: #ff7675; color: white; border: none; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; margin-left: 5px;}
+        .btn-mini-edit { background: #74b9ff; color: white; border: none; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; }
+        
+        /* Backup Buttons */
+        .btn-backup { background: #6c5ce7; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
+        .btn-restore { background: #e17055; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
 
-        .history {
-            margin-top: 20px;
-            font-size: 13px;
-            color: #95a5a6;
-            max-height: 150px;
-            overflow-y: auto;
-            text-align: left;
-            border-top: 1px solid #46607a;
-            padding-top: 10px;
-        }
-        .history div { margin-bottom: 5px; border-bottom: 1px dashed #46607a; padding-bottom: 5px; }
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🎁 孩子獎勵抽抽樂</h1>
-    
-    <table class="odds-table">
-        <tr><td style="color:#ecf0f1">普通 (60%)</td><td style="color:#2ecc71">罕見 (20%)</td></tr>
-        <tr><td style="color:#3498db">稀有 (10%)</td><td style="color:#9b59b6">史詩 (6%)</td></tr>
-        <tr><td style="color:#e67e22">傳奇 (3%)</td><td style="color:#e74c3c; font-weight:bold;">神話 (1%)</td></tr>
-    </table>
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2 style="margin-top:0; color:#4a90e2;">好孩子獎勵 App</h2>
+        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入以同步雲端資料</p>
+        
+        <input type="email" id="emailInput" class="login-input" placeholder="電子信箱 (Email)">
+        <input type="password" id="passwordInput" class="login-input" placeholder="密碼 (至少6位數)">
+        
+        <div class="btn-group-login">
+            <button id="btnLogin" class="btn-login">登入</button>
+            <button id="btnRegister" class="btn-register">註冊新帳號</button>
+        </div>
 
-    <div id="result-card" style="display:none;">
-        <div class="tier-label"></div>
-        <div class="reward-text"></div>
-    </div>
-    
-    <button id="drawBtn" class="btn-draw" onclick="draw()">🚀 試手氣</button>
-
-    <div class="history" id="historyLog">
-        本局紀錄：
+        <div id="loadingMsg">資料讀取中...</div>
+        <p id="loginError" style="color:red; font-size:0.8rem; margin-top:15px; min-height: 1.2em;"></p>
     </div>
 </div>
 
-<script>
-    // 定義獎項與機率
-    const tiers = [
-        { 
-            name: '普通', 
-            class: 'rank-common', 
-            probability: 60, 
-            colorCode: '#ecf0f1',
-            confetti: false,
-            rewards: ['小日記減少一行','假日玩電動加5分鐘','假日爸爸陪玩電動5分鐘','減少看書時間5分鐘']
-        },
-        { 
-            name: '罕見', 
-            class: 'rank-uncommon', 
-            probability: 20, 
-            colorCode: '#2ecc71',
-            confetti: false,
-            rewards: ['小日記減少二行','假日玩電動加10分鐘','假日爸爸陪玩電動10分鐘','減少看書時間10分鐘']
-        },
-        { 
-            name: '稀有', 
-            class: 'rank-rare', 
-            probability: 10, 
-            colorCode: '#3498db',
-            confetti: true, // 彩帶特效
-            rewards: ['小日記減少三行','假日玩電動加15分鐘','假日爸爸陪玩電動15分鐘','減少看書時間15分鐘','媽媽陪睡覺']
-        },
-        { 
-            name: '史詩', 
-            class: 'rank-epic', 
-            probability: 6, 
-            colorCode: '#9b59b6',
-            confetti: true,
-            rewards: ['小日記減少四行','平日可玩電動10分鐘','假日爸爸陪玩電動15分鐘']
-        },
-        { 
-            name: '傳奇', 
-            class: 'rank-legendary', 
-            probability: 3, 
-            colorCode: '#e67e22',
-            confetti: true,
-            rewards: ['平日可玩電動15分鐘','零用錢100元']
-        },
-        { 
-            name: '神話', 
-            class: 'rank-mythic', 
-            probability: 1, 
-            colorCode: '#e74c3c',
-            confetti: true,
-            rewards: ['平日可玩電動30分鐘','可任意選購500元內的小禮物']
+<canvas id="confetti-canvas"></canvas>
+
+<div class="user-bar">
+    <span id="userEmail">未登入</span>
+    <button class="btn-logout" id="btnLogout">登出</button>
+</div>
+
+<div class="header">
+    <div class="points-label">目前持有獎勵點數</div>
+    <div class="points-val" id="scoreDisplay">--</div>
+</div>
+
+<div class="nav">
+    <button class="nav-btn active" onclick="switchTab('tab-gacha')">🎰 抽獎</button>
+    <button class="nav-btn" onclick="switchTab('tab-bag')">🎒 背包</button>
+    <button class="nav-btn" onclick="switchTab('tab-bank')">🏦 銀行</button>
+    <button class="nav-btn" onclick="switchTab('tab-admin')">⚙️ 家長</button>
+</div>
+
+<div id="tab-gacha" class="section active">
+    <div class="roulette-container">
+        <div id="box-0" class="roulette-box box-common">普通<span>60%</span></div>
+        <div id="box-1" class="roulette-box box-uncommon">罕見<span>20%</span></div>
+        <div id="box-2" class="roulette-box box-rare">稀有<span>10%</span></div>
+        <div id="box-3" class="roulette-box box-epic">史詩<span>6%</span></div>
+        <div id="box-4" class="roulette-box box-legendary">傳奇<span>3%</span></div>
+        <div id="box-5" class="roulette-box box-mythic">神話<span>1%</span></div>
+    </div>
+    <button id="btnDraw" class="big-btn" onclick="startGacha()">啟動轉盤 (-100點)</button>
+    <div class="pity-info">
+        🛡️ <strong>保底進度：</strong><br>
+        小保底(稀有+)：<span id="pityRareDisp" style="color:#0984e3; font-weight:bold;">0</span>/10<br>
+        大保底(神話!)：<span id="pityLegDisp" style="color:#d63031; font-weight:bold;">0</span>/100
+    </div>
+    <div id="finalResult"><span style="color:#aaa">準備抽獎...</span></div>
+</div>
+
+<div id="tab-bag" class="section">
+    <h3 style="border-left: 4px solid var(--rare); padding-left: 10px; color:#333;">🎒 我的獎品</h3>
+    <div id="bagList"></div>
+    <div id="bagEmpty" style="text-align:center; color:#999; padding:20px;">背包空空的</div>
+</div>
+
+<div id="tab-bank" class="section">
+    <div class="bank-card">
+        <div class="bank-rate">📈 活存利率：4% / 天</div>
+        <div class="bank-desc">每晚 <strong>20:00</strong> 結算，記得來領利息！</div>
+        <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:5px; border-radius:5px;">
+            上次領息：<span id="lastInterestDate">無</span>
+        </div>
+        <div style="text-align:center; margin-top:10px;">
+             <div style="font-size:0.8rem; margin-bottom:5px; color:#eee;">距離下次發利息還有：</div>
+             <div id="interestTimer" class="bank-timer">--:--:--</div>
+        </div>
+    </div>
+
+    <div class="deposit-form">
+        <h3 style="margin-top:0; color:#2d3436;">🔒 申請超級定存</h3>
+        <p style="font-size:0.9rem; color:#666; margin-bottom:10px;">
+            鎖定 <strong>30 天</strong>，每天獲利 <strong>7%</strong>！<br>
+            <span style="color:#d63031;">(超高報酬，但期間絕對不能領出)</span>
+        </p>
+        <input type="number" id="depositAmount" class="deposit-input" placeholder="輸入要存的點數">
+        <button class="btn-deposit" onclick="createDeposit()">確認存入</button>
+    </div>
+
+    <h3 style="margin:20px 0 10px 0;">我的定存單</h3>
+    <div id="depositList"></div>
+    <div id="depositEmpty" style="text-align:center; color:#999;">目前沒有定存</div>
+</div>
+
+<div id="tab-admin" class="section">
+    <div class="admin-box">
+        <h3>💰 發放點數</h3>
+        <input type="text" id="reasonIn" class="admin-input" placeholder="原因">
+        <input type="number" id="pointsIn" class="admin-input" placeholder="點數" value="50">
+        <button class="btn-admin" onclick="addPoints()">發放</button>
+    </div>
+
+    <div class="admin-box" style="border: 2px solid #fdcb6e;">
+        <h3 style="color:#d35400;">🎁 獎品管理</h3>
+        <p style="font-size:0.8rem; color:#666;">選擇等級，編輯該等級的獎品內容。</p>
+        
+        <select id="tierSelect" class="admin-input" onchange="renderPrizeManager()" style="font-weight:bold; color:#333;">
+            <option value="0">普通 (60%)</option>
+            <option value="1">罕見 (20%)</option>
+            <option value="2">稀有 (10%)</option>
+            <option value="3">史詩 (6%)</option>
+            <option value="4">傳奇 (3%)</option>
+            <option value="5">神話 (1%)</option>
+        </select>
+
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <input id="newPrizeName" class="admin-input" style="margin:0;" placeholder="輸入新獎品名稱">
+            <button class="btn-admin" style="width:80px; background:#00b894;" onclick="addCustomPrize()">新增</button>
+        </div>
+
+        <div id="prizeManagerList" style="max-height: 200px; overflow-y: auto; background:#f9f9f9; border:1px solid #eee; border-radius:5px;"></div>
+        
+        <div style="text-align:right; margin-top:10px;">
+             <button onclick="restoreDefaultPrizes()" style="font-size:0.8rem; color:#999; background:none; border:none; cursor:pointer; text-decoration:underline;">↺ 恢復預設獎品</button>
+        </div>
+    </div>
+
+    <div class="admin-box" style="background:#f0f3ff; border:1px solid #dbe4ff;">
+        <h3 style="color:#4a69bd;">💾 資料備份 (本地端)</h3>
+        <div style="display:flex; justify-content:space-between;">
+            <button class="btn-backup" onclick="exportData()">⬇️ 匯出</button>
+            <button class="btn-restore" onclick="document.getElementById('importFile').click()">⬆️ 匯入</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(this)" accept=".json">
+        </div>
+        <p style="font-size:0.8rem; color:#888; margin-bottom:0;">注意：匯入會覆蓋雲端資料</p>
+    </div>
+
+    <div class="admin-box">
+        <h3>📜 存摺紀錄</h3>
+        <div id="historyList" style="font-size:0.9rem; color:#666;"></div>
+    </div>
+
+    <div style="text-align:center; margin-top:20px;">
+        <button onclick="resetAll()" style="background:#ddd; border:none; padding:10px 20px; border-radius:20px; color:#666;">⚠️ 重置資料 (清空雲端)</button>
+    </div>
+</div>
+
+<script type="module">
+    // === 🔴 1. 引入 Firebase SDK ===
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // === 🟢 2. 設定區 (已填入您的設定) ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyCArCzhRG6H-07Ooet34ikyP3w9xVq6t1U",
+      authDomain: "kidrewardapp.firebaseapp.com",
+      projectId: "kidrewardapp",
+      storageBucket: "kidrewardapp.firebasestorage.app",
+      messagingSenderId: "980449979485",
+      appId: "1:980449979485:web:652d6b419385e76ad071b4",
+      measurementId: "G-L86Y9Y477Y"
+    };
+
+    // === 3. 初始化 Firebase ===
+    let app, auth, db, userRef, analytics;
+    let currentUser = null;
+
+    try {
+        app = initializeApp(firebaseConfig);
+        analytics = getAnalytics(app);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        console.log("Firebase initialized");
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+        document.getElementById('loginError').innerText = "系統初始化失敗，請檢查設定";
+    }
+
+    // === 4. 登入/註冊 邏輯 (Email/Password) ===
+    const loginOverlay = document.getElementById('loginOverlay');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnRegister = document.getElementById('btnRegister');
+    const btnLogout = document.getElementById('btnLogout');
+    const loadingMsg = document.getElementById('loadingMsg');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const errorMsg = document.getElementById('loginError');
+
+    // 處理錯誤訊息中文化
+    function handleAuthError(error) {
+        loadingMsg.style.display = 'none';
+        let msg = error.code;
+        if (msg === 'auth/invalid-email') msg = "Email 格式不正確";
+        else if (msg === 'auth/user-not-found' || msg === 'auth/wrong-password' || msg === 'auth/invalid-credential') msg = "帳號或密碼錯誤";
+        else if (msg === 'auth/email-already-in-use') msg = "此 Email 已經註冊過了";
+        else if (msg === 'auth/weak-password') msg = "密碼太弱 (至少需6位)";
+        else if (msg === 'auth/missing-password') msg = "請輸入密碼";
+        errorMsg.innerText = msg;
+    }
+
+    // 登入按鈕
+    btnLogin.addEventListener('click', () => {
+        const email = emailInput.value;
+        const password = passwordInput.value;
+        if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
+        
+        loadingMsg.style.display = 'block';
+        errorMsg.innerText = "";
+        
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // 成功登入，onAuthStateChanged 會接手
+            })
+            .catch((error) => {
+                handleAuthError(error);
+            });
+    });
+
+    // 註冊按鈕
+    btnRegister.addEventListener('click', () => {
+        const email = emailInput.value;
+        const password = passwordInput.value;
+        if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
+
+        loadingMsg.style.display = 'block';
+        errorMsg.innerText = "";
+
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                alert("註冊成功！已為您登入");
+            })
+            .catch((error) => {
+                handleAuthError(error);
+            });
+    });
+
+    btnLogout.addEventListener('click', () => {
+        if(confirm("確定要登出嗎？")) {
+            signOut(auth).then(() => {
+                location.reload();
+            });
         }
+    });
+
+    // 監聽登入狀態
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // 已登入
+            currentUser = user;
+            userRef = doc(db, "users", user.uid);
+            document.getElementById('userEmail').innerText = user.email;
+            loginOverlay.style.display = 'none';
+            // 載入資料
+            await loadDataFromCloud();
+            // 啟動定時器
+            setInterval(updateTimerAndDeposits, 1000);
+        } else {
+            // 未登入
+            loginOverlay.style.display = 'flex';
+            loadingMsg.style.display = 'none';
+        }
+    });
+
+    // === 5. 資料存取 (雲端核心) ===
+    
+    // 設定
+    const COST = 100;
+    const DAILY_INTEREST_RATE = 0.04;      
+    const FIXED_DEPOSIT_DAILY_RATE = 0.07; 
+    const INTEREST_HOUR = 20;              
+    const FIXED_DEPOSIT_DAYS = 30; 
+
+    // 預設資料
+    const DEFAULT_TIERS = [
+        { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
+        { id: 'uncommon', index: 1, name: '罕見', color: '#00b894', chance: 20, rewards: ['小日記減少二行', '假日玩電動加10分鐘', '假日爸爸陪玩電動10分鐘', '減少看書時間10分鐘'] },
+        { id: 'rare', index: 2, name: '稀有', color: '#0984e3', chance: 10, rewards: ['小日記減少三行', '假日玩電動加15分鐘', '假日爸爸陪玩電動15分鐘', '減少看書時間15分鐘', '媽媽陪睡覺'] },
+        { id: 'epic', index: 3, name: '史詩', color: '#6c5ce7', chance: 6, rewards: ['小日記減少四行', '平日可玩電動10分鐘', '假日爸爸陪玩電動15分鐘', '增加點數200點'] },
+        { id: 'legendary', index: 4, name: '傳奇', color: '#e17055', chance: 3, rewards: ['平日可玩電動15分鐘', '零用錢100元', '增加點數300點'] },
+        { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '可任意選購500元內的小禮物', '打手心處罰減免一次', '增加點數500點'] }
     ];
 
-    function draw() {
-        const btn = document.getElementById('drawBtn');
-        const card = document.getElementById('result-card');
-        const tierLabel = card.querySelector('.tier-label');
-        const rewardText = card.querySelector('.reward-text');
-        
-        // 鎖定按鈕
-        btn.disabled = true;
-        
-        // 顯示卡片並初始化
-        card.style.display = 'flex';
-        card.className = '';
-        card.style.backgroundColor = '#34495e';
-        
-        tierLabel.innerText = "🎲";
-        tierLabel.style.fontSize = "30px";
-        rewardText.innerText = "抽選中...";
-        rewardText.style.fontSize = "16px";
-        
-        // 閃爍動畫
-        let flashCount = 0;
-        const flashInterval = setInterval(() => {
-            const randomTier = tiers[Math.floor(Math.random() * tiers.length)];
-            card.style.color = randomTier.colorCode; 
-            flashCount++;
-            
-            if (flashCount > 10) { 
-                clearInterval(flashInterval);
-                finishDraw(card, btn);
+    let data = {
+        score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: null
+    };
+
+    // 從雲端載入
+    async function loadDataFromCloud() {
+        try {
+            const docSnap = await getDoc(userRef);
+            if (docSnap.exists()) {
+                const cloudData = docSnap.data();
+                data = { ...data, ...cloudData };
+                
+                // 確保 tiers 結構存在
+                if (!data.tiers || data.tiers.length === 0) {
+                    data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+                }
+                
+                checkDailyInterest();
+                updateUI();
+                renderPrizeManager();
+                console.log("雲端資料同步完成");
+            } else {
+                console.log("新用戶，建立初始資料");
+                data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+                saveDataToCloud(); // 寫入初始資料
+                updateUI();
+                renderPrizeManager();
             }
-        }, 80);
+        } catch (e) {
+            console.error(e);
+            alert("讀取雲端資料失敗：" + e.message);
+        }
     }
 
-    function finishDraw(card, btn) {
-        // 1. 決定稀有度
-        const rand = Math.random() * 100;
-        let cumulative = 0;
-        let selectedTier = null;
+    // 存入雲端
+    async function saveDataToCloud() {
+        if (!currentUser) return;
+        try {
+            await setDoc(userRef, data);
+            updateUI();
+        } catch (e) {
+            console.error("存檔失敗", e);
+        }
+    }
 
-        for (let tier of tiers) {
-            cumulative += tier.probability;
-            if (rand < cumulative) {
-                selectedTier = tier;
-                break;
+    // --- 音效與動畫 ---
+    let audioCtx = null;
+    function initAudio() { if (!audioCtx) { const AudioContext = window.AudioContext || window.webkitAudioContext; audioCtx = new AudioContext(); const osc = audioCtx.createOscillator(); osc.connect(audioCtx.destination); osc.start(); osc.stop(0.01); } }
+    function playBeep(freq, type, duration) { if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration); }
+    
+    function fireConfetti() {
+        const c = document.getElementById('confetti-canvas'); const ctx = c.getContext('2d');
+        c.width = window.innerWidth; c.height = window.innerHeight;
+        let p = []; const colors = ['#f1c40f', '#e74c3c', '#3498db', '#9b59b6', '#2ecc71'];
+        for(let i=0; i<150; i++) p.push({x: c.width/2, y: c.height/2, r: Math.random()*6+2, dx: Math.random()*10-5, dy: Math.random()*10-5, color: colors[Math.floor(Math.random()*colors.length)], life: 100});
+        function d() {
+            ctx.clearRect(0,0,c.width,c.height); let active = false;
+            p.forEach(k => { if(k.life>0){ active=true; ctx.beginPath(); ctx.arc(k.x, k.y, k.r, 0, Math.PI*2); ctx.fillStyle=k.color; ctx.fill(); k.x+=k.dx; k.y+=k.dy; k.dy+=0.2; k.life--; }});
+            if(active) requestAnimationFrame(d); else ctx.clearRect(0,0,c.width,c.height);
+        }
+        d();
+    }
+
+    // === 6. 功能函式 (掛載到 window 以供 HTML 呼叫) ===
+    
+    window.switchTab = function(id) {
+        document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        const buttons = document.querySelectorAll('.nav-btn');
+        if(id==='tab-gacha') buttons[0].classList.add('active');
+        if(id==='tab-bag') buttons[1].classList.add('active');
+        if(id==='tab-bank') buttons[2].classList.add('active');
+        if(id==='tab-admin') { buttons[3].classList.add('active'); renderPrizeManager(); }
+    };
+
+    window.startGacha = function() {
+        if (!data.tiers) data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+        if (data.score < COST) return;
+        initAudio();
+        data.score -= COST;
+        recordHistory('參加抽獎', -COST);
+        
+        let resultTier = null;
+        if (data.pityLegendary >= 99) resultTier = data.tiers[5];
+        else if (data.pityRare >= 9) resultTier = data.tiers[2];
+        else {
+            const rand = Math.random() * 100; let cumulative = 0; resultTier = data.tiers[0];
+            for (let t of data.tiers) { cumulative += t.chance; if (rand <= cumulative) { resultTier = t; break; } }
+        }
+        if (resultTier.index === 5) { data.pityLegendary = 0; data.pityRare = 0; }
+        else if (resultTier.index >= 2) { data.pityRare = 0; data.pityLegendary++; }
+        else { data.pityRare++; data.pityLegendary++; }
+        
+        saveDataToCloud();
+        
+        const btnDraw = document.getElementById('btnDraw');
+        const finalResult = document.getElementById('finalResult');
+        btnDraw.disabled = true;
+        finalResult.innerHTML = '<span style="color:#999; font-size:1.5rem">🎰 轉動中...</span>';
+        
+        let currentIdx = 0; const totalLoops = 5; 
+        const boxes = document.querySelectorAll('.roulette-box');
+        let speed = 40; let stepCount = 0; let totalSteps = (totalLoops * 6) + resultTier.index; 
+        
+        function step() {
+            boxes.forEach(b => b.classList.remove('active'));
+            document.getElementById(`box-${currentIdx}`).classList.add('active');
+            playBeep(800, 'square', 0.03);
+            if (stepCount >= totalSteps) {
+                playBeep(600, 'sine', 0.1); setTimeout(() => playBeep(1200, 'sine', 0.3), 150);
+                let finalReward = "銘謝惠顧";
+                if (resultTier.rewards && resultTier.rewards.length > 0) {
+                    finalReward = resultTier.rewards[Math.floor(Math.random() * resultTier.rewards.length)];
+                }
+                finalResult.innerHTML = `<h2 style="color:${resultTier.color}">${resultTier.name}級獎勵！</h2><p style="font-weight:bold; font-size:1.3rem; color:#333;">${finalReward}</p>`;
+                data.bag.unshift({ tierName: resultTier.name, color: resultTier.color, reward: finalReward, id: Date.now() });
+                saveDataToCloud();
+                btnDraw.disabled = false; updateUI();
+                if (resultTier.index >= 2) fireConfetti();
+                return;
             }
+            stepCount++; currentIdx++; if (currentIdx >= 6) currentIdx = 0;
+            let remainingSteps = totalSteps - stepCount;
+            if (remainingSteps < 8) speed += (10 - remainingSteps) * 20; else if (speed > 40) speed = 40;
+            setTimeout(step, speed);
         }
-        if (!selectedTier) selectedTier = tiers[0];
+        step();
+    };
 
-        // 2. 決定具體獎勵
-        const randomReward = selectedTier.rewards[Math.floor(Math.random() * selectedTier.rewards.length)];
-
-        // 3. 顯示結果
-        card.style.color = '';
-        card.className = selectedTier.class;
-        
-        const tierLabel = card.querySelector('.tier-label');
-        const rewardText = card.querySelector('.reward-text');
-        
-        tierLabel.innerText = selectedTier.name;
-        tierLabel.style.fontSize = "18px";
-        rewardText.innerText = randomReward;
-        rewardText.style.fontSize = "26px";
-
-        // 4. 觸發特效
-        if (selectedTier.confetti) {
-            triggerConfetti();
+    window.useItem = function(idx) {
+        const item = data.bag[idx];
+        if(!confirm(`確定使用「${item.reward}」嗎？`)) return;
+        const match = item.reward.match(/增加點數(\d+)點/);
+        if (match) {
+            const p = parseInt(match[1]); data.score += p;
+            recordHistory(`使用點數卡: ${item.reward}`, p);
+            alert(`🎊 已增加 ${p} 點！`);
+        } else {
+            recordHistory(`使用: ${item.reward}`, 0);
         }
+        data.bag.splice(idx, 1);
+        saveDataToCloud();
+    };
 
-        // 5. 寫入畫面紀錄
-        const history = document.getElementById('historyLog');
-        const p = document.createElement('div');
-        const timeStr = new Date().toLocaleTimeString();
-        // 移除事由，只顯示時間和獎項
-        p.innerHTML = `<span style="color:#bdc3c7">[${timeStr}]</span> <span style="color:${selectedTier.colorCode}">${selectedTier.name} - ${randomReward}</span>`;
-        history.insertBefore(p, history.children[0].nextSibling); // 插在標題下方
+    window.addPoints = function() {
+        const r = document.getElementById('reasonIn').value;
+        const p = parseInt(document.getElementById('pointsIn').value);
+        if (!r || !p) return alert('請輸入完整資訊');
+        data.score += p; recordHistory(r, p); saveDataToCloud();
+        alert(`已發放 ${p} 點`); document.getElementById('reasonIn').value = '';
+    };
 
-        // 6. 解鎖按鈕
-        btn.disabled = false;
-        btn.innerText = "🔄 再抽一次";
+    window.createDeposit = function() {
+        const amount = parseInt(document.getElementById('depositAmount').value);
+        if (!amount || amount <= 0) return alert("請輸入正確金額");
+        if (amount > data.score) return alert("點數不足！");
+        const estimatedProfit = Math.floor(amount * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS);
+        const totalReturn = amount + estimatedProfit;
+        if(!confirm(`確定要將 ${amount} 點存入定存嗎？\n\n📅 鎖定 ${FIXED_DEPOSIT_DAYS} 天\n📈 預計獲利 +${estimatedProfit} 點\n💰 到期可領 ${totalReturn} 點\n\n期間內無法取出喔！`)) return;
+        data.score -= amount;
+        const now = new Date(); const endDate = new Date(now); endDate.setDate(endDate.getDate() + FIXED_DEPOSIT_DAYS); 
+        data.deposits.push({ id: Date.now(), amount: amount, startDate: now.toISOString(), endDate: endDate.toISOString(), status: 'active' });
+        recordHistory(`🏦 申請定存`, -amount); saveDataToCloud(); alert("定存申請成功！"); document.getElementById('depositAmount').value = "";
+    };
+
+    window.redeemDeposit = function(id) {
+        const idx = data.deposits.findIndex(d => d.id === id); if (idx === -1) return;
+        const deposit = data.deposits[idx];
+        const principal = deposit.amount;
+        const interest = Math.floor(principal * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS);
+        const total = principal + interest;
+        data.score += total; recordHistory(`💰 定存到期領回`, total);
+        data.deposits.splice(idx, 1); saveDataToCloud();
+        alert(`恭喜！定存到期！\n本金：${principal}\n利息：${interest}\n總共獲得：${total} 點！`);
+    };
+
+    window.resetAll = function() {
+        if(confirm('⚠️ 警告：這將會清除雲端上的所有資料！確定嗎？')) {
+            data = { score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)) };
+            saveDataToCloud();
+        }
+    };
+
+    window.renderPrizeManager = function() {
+        const select = document.getElementById('tierSelect');
+        const listDiv = document.getElementById('prizeManagerList');
+        const selectedIndex = parseInt(select.value);
+        const tierData = data.tiers[selectedIndex];
+        select.style.borderColor = tierData.color; select.style.color = tierData.color;
+        let html = '';
+        if (tierData.rewards.length === 0) { html = '<div style="padding:10px; text-align:center; color:#999;">此等級目前沒有獎品</div>'; } 
+        else {
+            tierData.rewards.forEach((reward, idx) => {
+                html += `<div class="prize-manage-item"><span>${reward}</span><div><button class="btn-mini-edit" onclick="editPrize(${selectedIndex}, ${idx})">✏️</button><button class="btn-mini-del" onclick="removePrize(${selectedIndex}, ${idx})">🗑️</button></div></div>`;
+            });
+        }
+        listDiv.innerHTML = html;
+    };
+    window.addCustomPrize = function() {
+        const select = document.getElementById('tierSelect');
+        const input = document.getElementById('newPrizeName');
+        const name = input.value.trim();
+        const tierIdx = parseInt(select.value);
+        if (!name) return alert("請輸入獎品名稱");
+        data.tiers[tierIdx].rewards.push(name); saveDataToCloud(); input.value = ''; renderPrizeManager();
+    };
+    window.removePrize = function(tierIdx, rewardIdx) {
+        if(!confirm(`確定要刪除「${data.tiers[tierIdx].rewards[rewardIdx]}」嗎？`)) return;
+        data.tiers[tierIdx].rewards.splice(rewardIdx, 1); saveDataToCloud(); renderPrizeManager();
+    };
+    window.editPrize = function(tierIdx, rewardIdx) {
+        const oldName = data.tiers[tierIdx].rewards[rewardIdx];
+        const newName = prompt("修改獎品名稱：", oldName);
+        if (newName && newName.trim() !== "") {
+            data.tiers[tierIdx].rewards[rewardIdx] = newName.trim(); saveDataToCloud(); renderPrizeManager();
+        }
+    };
+    window.restoreDefaultPrizes = function() {
+        if(confirm("⚠️ 確定要恢復成「預設獎品」嗎？")) {
+            data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS)); saveDataToCloud(); renderPrizeManager(); alert("已恢復預設值。");
+        }
+    };
+
+    // 銀行定時更新
+    window.updateTimerAndDeposits = function() {
+        const now = new Date();
+        let target = new Date(now); target.setHours(INTEREST_HOUR, 0, 0, 0);
+        if (now > target) target.setDate(target.getDate() + 1);
+        const diff = target - now;
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        document.getElementById('interestTimer').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        
+        const list = document.getElementById('depositList');
+        const empty = document.getElementById('depositEmpty');
+        if (data.deposits.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        let html = '';
+        data.deposits.forEach(d => {
+            const end = new Date(d.endDate); const isMature = now >= end; const timeLeft = end - now;
+            let timeStr = isMature ? "✅ 已到期，可領回" : `⏳ 鎖定中 (剩 ${Math.floor(timeLeft / (1000 * 60 * 60 * 24))}天)`;
+            const profit = Math.floor(d.amount * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS);
+            html += `<div class="deposit-item"><div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894; font-size:0.9rem;">(預期+${profit})</span></div><div class="deposit-time">${timeStr}</div><button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature ? '' : 'disabled'}>${isMature ? '💰 立即領取' : '未到期'}</button></div>`;
+        });
+        list.innerHTML = html;
+    };
+
+    // 內部輔助
+    function checkDailyInterest() {
+        const now = new Date(); const currentHour = now.getHours(); const todayStr = now.toDateString();
+        if (currentHour < INTEREST_HOUR) return;
+        if (data.lastLoginDate !== todayStr && data.score > 0) {
+            const interest = Math.floor(data.score * DAILY_INTEREST_RATE);
+            if (interest > 0) {
+                data.score += interest; recordHistory(`💰 夜間活存結算 (4%)`, interest);
+                alert(`🌙 晚上好！\n銀行利息已入帳：+${interest} 點！`);
+            }
+            data.lastLoginDate = todayStr; saveDataToCloud();
+        } else if (data.lastLoginDate === "") {
+            data.lastLoginDate = todayStr; saveDataToCloud();
+        }
+    }
+    function updateUI() {
+        document.getElementById('scoreDisplay').innerText = data.score;
+        document.getElementById('lastInterestDate').innerText = data.lastLoginDate || "無";
+        const btn = document.getElementById('btnDraw');
+        if (data.score < COST) { btn.innerText = `點數不足 (缺${COST - data.score})`; btn.disabled = true; } 
+        else { btn.innerText = `啟動轉盤 (-${COST}點)`; btn.disabled = false; }
+        const bagList = document.getElementById('bagList'); bagList.innerHTML = '';
+        if (data.bag.length === 0) document.getElementById('bagEmpty').style.display = 'block';
+        else {
+            document.getElementById('bagEmpty').style.display = 'none';
+            data.bag.forEach((item, idx) => {
+                const div = document.createElement('div'); div.className = 'list-item'; div.style.borderLeftColor = item.color;
+                div.innerHTML = `<div><small style="color:${item.color};font-weight:bold;">${item.tierName}</small><br><span>${item.reward}</span></div><button class="btn-use" onclick="useItem(${idx})">使用</button>`;
+                bagList.appendChild(div);
+            });
+        }
+        const histList = document.getElementById('historyList');
+        histList.innerHTML = data.history.slice().reverse().map(h => `<div style="border-bottom:1px solid #eee; padding:8px 0;">${h.date} - ${h.reason} <span style="float:right; font-weight:bold; color:${h.amount>0?'#00b894':'#e17055'}">${h.amount}</span></div>`).join('');
+        document.getElementById('pityRareDisp').innerText = data.pityRare; document.getElementById('pityLegDisp').innerText = data.pityLegendary;
+        window.updateTimerAndDeposits();
+    }
+    function recordHistory(r, a) {
+        const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        data.history.push({ date: d, reason: r, amount: a });
     }
 
-    // 彩帶特效
-    function triggerConfetti() {
-        var count = 200;
-        var defaults = { origin: { y: 0.7 } };
-
-        function fire(particleRatio, opts) {
-            confetti(Object.assign({}, defaults, opts, {
-                particleCount: Math.floor(count * particleRatio)
-            }));
-        }
-
-        fire(0.25, { spread: 26, startVelocity: 55, });
-        fire(0.2, { spread: 60, });
-        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-        fire(0.1, { spread: 120, startVelocity: 45, });
+    // 本地備份 (保留功能)
+    window.exportData = function() {
+        const json = JSON.stringify(data);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([json], {type: "application/json"}));
+        a.download = `reward_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
+    window.importData = function(input) {
+        const file = input.files[0];
+        if (!file || !confirm("⚠️ 警告：匯入新檔案將會「覆蓋」目前的雲端紀錄！\n確定要繼續嗎？")) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (imported.score !== undefined) { 
+                    data = { ...data, ...imported }; 
+                    saveDataToCloud(); 
+                    alert("✅ 資料還原成功，並已同步至雲端！"); 
+                }
+            } catch(err) { alert("❌ 格式錯誤"); }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    }
+
 </script>
-
 </body>
 </html>

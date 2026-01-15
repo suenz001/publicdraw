@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - Email雲端版</title>
+    <title>超級幸運抽抽樂 - 雲端整合版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -45,7 +45,7 @@
         .login-card {
             background: white; padding: 30px; border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 80%; max-width: 350px;
+            width: 85%; max-width: 350px;
         }
         .login-input {
             width: 100%; padding: 12px; margin: 8px 0;
@@ -64,7 +64,8 @@
             font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
         }
         #loadingMsg { color: #888; margin-top: 10px; font-size: 0.9rem; display: none; }
-        
+        #loginError { color: red; font-size: 0.8rem; margin-top: 10px; min-height: 1.2em; }
+
         .user-bar {
             background: #2d3436; color: white; padding: 8px 15px;
             display: flex; justify-content: space-between; align-items: center;
@@ -186,7 +187,7 @@
 <div id="loginOverlay">
     <div class="login-card">
         <h2 style="margin-top:0; color:#4a90e2;">好孩子獎勵 App</h2>
-        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入以同步雲端資料</p>
+        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入或註冊以同步雲端資料</p>
         
         <input type="email" id="emailInput" class="login-input" placeholder="電子信箱 (Email)">
         <input type="password" id="passwordInput" class="login-input" placeholder="密碼 (至少6位數)">
@@ -197,7 +198,7 @@
         </div>
 
         <div id="loadingMsg">資料讀取中...</div>
-        <p id="loginError" style="color:red; font-size:0.8rem; margin-top:15px; min-height: 1.2em;"></p>
+        <p id="loginError"></p>
     </div>
 </div>
 
@@ -326,13 +327,13 @@
 </div>
 
 <script type="module">
-    // === 🔴 1. 引入 Firebase SDK ===
+    // === 🔴 1. 引入 Firebase SDK (Auth 改為使用 Email/Password) ===
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // === 🟢 2. 設定區 (已填入您的設定) ===
+    // === 🟢 2. CONFIG AREA ===
     const firebaseConfig = {
       apiKey: "AIzaSyCArCzhRG6H-07Ooet34ikyP3w9xVq6t1U",
       authDomain: "kidrewardapp.firebaseapp.com",
@@ -368,7 +369,6 @@
     const passwordInput = document.getElementById('passwordInput');
     const errorMsg = document.getElementById('loginError');
 
-    // 處理錯誤訊息中文化
     function handleAuthError(error) {
         loadingMsg.style.display = 'none';
         let msg = error.code;
@@ -391,7 +391,7 @@
         
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                // 成功登入，onAuthStateChanged 會接手
+                // 成功登入
             })
             .catch((error) => {
                 handleAuthError(error);
@@ -452,7 +452,7 @@
     const INTEREST_HOUR = 20;              
     const FIXED_DEPOSIT_DAYS = 30; 
 
-    // 預設資料
+    // 預設資料 (完整保留 v13 預設)
     const DEFAULT_TIERS = [
         { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
         { id: 'uncommon', index: 1, name: '罕見', color: '#00b894', chance: 20, rewards: ['小日記減少二行', '假日玩電動加10分鐘', '假日爸爸陪玩電動10分鐘', '減少看書時間10分鐘'] },
@@ -492,7 +492,7 @@
             }
         } catch (e) {
             console.error(e);
-            alert("讀取雲端資料失敗：" + e.message);
+            alert("讀取雲端資料失敗：" + e.message + "\n(請確認檔案已上傳至網頁空間)");
         }
     }
 

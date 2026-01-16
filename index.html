@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - v27 時間戳記版</title>
+    <title>超級幸運抽抽樂 - 雲端遊客版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -131,12 +131,11 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.8); z-index: 200; display: none; 
             overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; /* iOS 慣性捲動 */
+            -webkit-overflow-scrolling: touch; 
         }
         .settings-content { 
             background: #fff; margin: 20px auto; padding: 25px; 
             width: 90%; max-width: 500px; border-radius: 15px; position: relative;
-            /* 🔴 關鍵修正：防止寬度溢出 */
             box-sizing: border-box; 
         }
         .settings-group { margin-bottom: 25px; border-bottom: 2px dashed #eee; padding-bottom: 20px; }
@@ -146,7 +145,6 @@
         .radio-group { display: flex; gap: 15px; margin-bottom: 10px; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
         
-        /* 🔴 關鍵修正：內層列表捲動優化 */
         #prizeManagerList {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
@@ -159,7 +157,6 @@
         .pin-btn { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #ddd; background: white; font-size: 1.5rem; font-weight: bold; cursor: pointer; color: #333; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .pin-btn:active { background: #f0f0f0; transform: scale(0.95); }
         
-        /* Child Management List in Settings */
         .child-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; margin-bottom: 5px; border-radius: 8px; }
 
         #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
@@ -422,7 +419,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // === 您的 Firebase 設定 ===
@@ -493,31 +490,38 @@
         sendPasswordResetEmail(auth, email).then(() => { loadingMsg.style.display = 'none'; alert("重設信已寄出！"); }).catch((error) => { handleAuthError(error); });
     });
 
+    // 🔴 遊客按鈕：觸發匿名登入 (Firebase Anonymous Auth)
     btnGuest.addEventListener('click', () => {
-        isGuest = true;
-        currentUser = { uid: 'guest', email: '遊客模式 (資料僅存本機)' };
-        document.getElementById('userEmail').innerText = currentUser.email;
-        loginOverlay.style.display = 'none';
-        loadDataFromLocal();
-        setInterval(updateTimerAndDeposits, 1000);
+        loadingMsg.style.display = 'block';
+        signInAnonymously(auth).catch((error) => {
+            handleAuthError(error);
+            alert("請確認 Firebase 後台已開啟 [Anonymous] 登入功能！");
+        });
     });
 
     btnLogout.addEventListener('click', () => {
         if(confirm("確定要登出嗎？")) { 
-            if(isGuest) location.reload();
-            else signOut(auth).then(() => { location.reload(); }); 
+            signOut(auth).then(() => { location.reload(); }); 
         }
     });
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            isGuest = false; currentUser = user;
+            currentUser = user;
             userRef = doc(db, "users", user.uid);
-            document.getElementById('userEmail').innerText = user.email;
+            
+            if (user.isAnonymous) {
+                isGuest = true;
+                document.getElementById('userEmail').innerText = "👻 遊客 (ID:" + user.uid.slice(0,5) + ")";
+            } else {
+                isGuest = false;
+                document.getElementById('userEmail').innerText = user.email;
+            }
+
             loginOverlay.style.display = 'none';
             await loadDataFromCloud();
             setInterval(updateTimerAndDeposits, 1000);
-        } else if(!isGuest) {
+        } else {
             loginOverlay.style.display = 'flex';
             loadingMsg.style.display = 'none';
         }
@@ -540,18 +544,17 @@
         currentIdx: 0,
         settings: {
             dailyInterest: 0.04,
-            interestHour: 20, // 新增：可自訂發放時間
+            interestHour: 20, 
             fixedDepositRate: 0.07,
             fixedDepositDays: 30,
             adminPin: null,
-            pityRareThreshold: 10, pityLegendaryThreshold: 100, pityBigTarget: 5, // 5=mythic, 4=legendary+
-            prizeScope: 'global' // or 'individual'
+            pityRareThreshold: 10, pityLegendaryThreshold: 100, pityBigTarget: 5, 
+            prizeScope: 'global' 
         },
         tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)),
         children: [] 
     };
 
-    // 指向當前小孩
     let data = null; 
 
     function createNewChildData() {
@@ -565,18 +568,15 @@
             if(!masterData.settings.pityRareThreshold) masterData.settings.pityRareThreshold = 10;
             if(!masterData.settings.pityLegendaryThreshold) masterData.settings.pityLegendaryThreshold = 100;
             if(!masterData.settings.prizeScope) masterData.settings.prizeScope = 'global';
-            if(masterData.settings.interestHour === undefined) masterData.settings.interestHour = 20; // 預設 20:00
+            if(masterData.settings.interestHour === undefined) masterData.settings.interestHour = 20; 
         } else if (cloudData && cloudData.score !== undefined) {
-            // 舊轉新
             let oldData = { ...cloudData };
             delete oldData.tiers;
             masterData.tiers = cloudData.tiers || JSON.parse(JSON.stringify(DEFAULT_TIERS));
             masterData.settings = { dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30 };
             masterData.children = [{ name: "寶貝1", data: oldData }];
-            // 確保小孩也有 tiers 結構 (for individual mode)
             masterData.children[0].data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
         } else {
-            // 全新
             masterData.children = [{ name: "寶貝1", data: createNewChildData() }];
             masterData.settings.interestHour = 20;
         }
@@ -584,31 +584,24 @@
     }
 
     async function loadDataFromCloud() {
-        try { const snap = await getDoc(userRef); initMasterData(snap.exists() ? snap.data() : null); saveData(); }
-        catch (e) { alert("讀取失敗"); }
+        try { 
+            const snap = await getDoc(userRef); 
+            // 讀取雲端資料，若無則初始化預設值
+            initMasterData(snap.exists() ? snap.data() : null); 
+            // 第一次初始化後立即存檔，確保 Admin 能看到新遊客
+            saveData(); 
+        }
+        catch (e) { alert("讀取失敗：" + e.message); }
     }
-    function loadDataFromLocal() {
-        // v26 版本：自動讀取舊版資料
-        let s = localStorage.getItem('kidGacha_v27');
-        if(!s) s = localStorage.getItem('kidGacha_v26');
-        if(!s) s = localStorage.getItem('kidGacha_v25'); 
-        initMasterData(s ? JSON.parse(s) : null);
-    }
+
     function saveData() {
-        // 強制數值修正 (避免浮點數誤差)
         masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
-        
-        // 🆕 v27 核心：記錄最後上線時間
         masterData.lastLoginDate = new Date().toISOString(); 
 
-        if (isGuest) { 
-            localStorage.setItem('kidGacha_v27', JSON.stringify(masterData)); 
-            updateUI(); 
-        }
-        else if (currentUser) { 
-            // 🆕 v26 核心：Email 回寫
-            masterData.email = currentUser.email;
+        if (currentUser) { 
+            // 寫入 Email 欄位 (遊客則寫入標記)
+            masterData.email = currentUser.isAnonymous ? `👻 遊客 (ID:${currentUser.uid.slice(0,5)})` : currentUser.email;
             setDoc(userRef, masterData).then(()=>updateUI()); 
         }
     }
@@ -632,7 +625,7 @@
 
     // === PIN 碼與設定 ===
     let currentPinInput = "";
-    let pinContext = 'login'; // 'login' (解鎖) or 'setup' (設定)
+    let pinContext = 'login'; 
     
     window.switchTab = function(id) {
         if(id === 'tab-admin' && masterData.settings.adminPin) {
@@ -657,7 +650,6 @@
         if(id==='tab-admin') buttons[3].classList.add('active');
     }
 
-    // 設定密碼功能
     window.startSetPin = function() {
         pinContext = 'setup';
         currentPinInput = "";
@@ -679,7 +671,6 @@
             currentPinInput += num;
             updatePinDisplay();
             if(currentPinInput.length === 4) {
-                // 檢查模式
                 if (pinContext === 'login') {
                     if(currentPinInput === masterData.settings.adminPin) {
                         closePin();
@@ -702,7 +693,6 @@
     window.closePin = function() { document.getElementById('pinModal').style.display = 'none'; }
     function updatePinDisplay() { document.getElementById('pinDisplay').innerText = "*".repeat(currentPinInput.length); }
 
-    // === 設定視窗 ===
     window.openSettings = function() {
         document.getElementById('settingsModal').style.display = 'block';
         document.getElementById('setDailyRate').value = masterData.settings.dailyInterest;
@@ -712,18 +702,14 @@
         document.getElementById('setPityRare').value = masterData.settings.pityRareThreshold;
         document.getElementById('setPityLeg').value = masterData.settings.pityLegendaryThreshold;
         document.getElementById('setPityTarget').value = masterData.settings.pityBigTarget || 5;
-        // document.getElementById('adminPinInput').value = masterData.settings.adminPin || ""; // 移除 Input 顯示
         
-        // 獎品範圍
         const scope = masterData.settings.prizeScope || 'global';
         document.querySelector(`input[name="prizeScope"][value="${scope}"]`).checked = true;
         updateScopeHint(scope);
 
-        // 機率
         const currentTiers = getCurrentTiers();
         currentTiers.forEach((t, i) => document.getElementById(`prob${i}`).value = t.chance);
 
-        // 顯示管理區塊
         document.getElementById('guestBindSection').style.display = isGuest ? 'block' : 'none';
         document.getElementById('userAccountSection').style.display = isGuest ? 'none' : 'block';
         if(!isGuest) document.getElementById('settingsEmailDisplay').innerText = currentUser.email;
@@ -736,11 +722,10 @@
 
     window.switchPrizeScope = function(scope) {
         updateScopeHint(scope);
-        // 如果切換到個別，且目前沒資料，複製全域的過來
         if(scope === 'individual' && (!data.tiers || data.tiers.length === 0)) {
             data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
         }
-        renderPrizeManager(); // 重新讀取正確的 tiers 來源
+        renderPrizeManager(); 
     }
 
     function updateScopeHint(scope) {
@@ -749,7 +734,6 @@
         else hint.innerText = "目前模式：當前小孩 (" + masterData.children[masterData.currentIdx].name + ") 擁有獨立獎品清單。";
     }
 
-    // 取得當前應該使用的 Tiers
     function getCurrentTiers() {
         if (masterData.settings.prizeScope === 'individual') {
             if (!data.tiers) data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
@@ -770,7 +754,6 @@
 
         if(iHour < 0 || iHour > 23) return alert("時間必須是 0~23");
 
-        // 驗證機率
         let totalProb = 0;
         let newProbs = [];
         for(let i=0; i<6; i++) {
@@ -780,7 +763,6 @@
         }
         if(Math.abs(totalProb - 100) > 0.1) return alert(`機率總和必須為 100% (目前 ${totalProb}%)`);
 
-        // 存回 masterData
         masterData.settings.dailyInterest = dRate;
         masterData.settings.interestHour = iHour;
         masterData.settings.fixedDepositRate = fRate;
@@ -790,7 +772,6 @@
         masterData.settings.pityBigTarget = pTarget;
         masterData.settings.prizeScope = scope;
 
-        // 存回機率到正確的 Tiers
         const targetTiers = getCurrentTiers();
         newProbs.forEach((p, i) => targetTiers[i].chance = p);
 
@@ -800,7 +781,6 @@
         alert("設定已儲存！");
     }
 
-    // === 小孩管理 (設定頁內) ===
     window.addNewChildFromSettings = function() {
         const name = document.getElementById('settingsNewChildName').value;
         if (!name) return alert("請輸入名字");
@@ -808,7 +788,6 @@
         document.getElementById('settingsNewChildName').value = '';
         saveData();
         renderSettingsChildList();
-        // 更新切換選單
         document.getElementById("childDropdown").innerHTML = masterData.children.map((c, i) => `<div onclick="switchChild(${i})">${c.name}</div>`).join('');
     }
 
@@ -839,14 +818,24 @@
         `).join('');
     }
 
-    // === 帳號功能 ===
+    // === 遊客綁定邏輯修正：使用 updateEmail 升級帳號 (保留資料) ===
     window.bindGuestAccount = function() {
-        const e = document.getElementById('bindEmail').value, p = document.getElementById('bindPass').value;
-        if(!e || !p) return alert("請輸入");
-        createUserWithEmailAndPassword(auth, e, p).then(cred => {
-            isGuest = false; currentUser = cred.user; userRef = doc(db, "users", currentUser.uid);
-            saveData(); alert("綁定成功！"); location.reload();
-        }).catch(err => alert(err.message));
+        const e = document.getElementById('bindEmail').value;
+        const p = document.getElementById('bindPass').value;
+        
+        if(!e || !p) return alert("請輸入完整 Email 和密碼");
+
+        if (currentUser && currentUser.isAnonymous) {
+            updateEmail(currentUser, e).then(() => {
+                return updatePassword(currentUser, p);
+            }).then(() => {
+                alert("轉正成功！您的資料已保留並綁定至新 Email。");
+                saveData(); // 更新資料庫中的 email 欄位
+                location.reload();
+            }).catch(err => {
+                alert("綁定失敗：" + err.message + "\n(若是驗證過期，請重新整理網頁後再試一次)");
+            });
+        }
     }
     
     window.triggerResetPassword = function() {
@@ -855,13 +844,12 @@
         }
     }
 
-    // === 獎品管理 (支援 Global/Individual) ===
     window.renderPrizeManager = function() {
         const select = document.getElementById('tierSelect'); 
         const listDiv = document.getElementById('prizeManagerList'); 
         const selectedIndex = parseInt(select.value); 
         
-        const currentTiers = getCurrentTiers(); // 根據模式取得正確的 tiers
+        const currentTiers = getCurrentTiers(); 
         const tierData = currentTiers[selectedIndex];
         
         select.style.borderColor = tierData.color; select.style.color = tierData.color; 
@@ -905,11 +893,9 @@
         }
     };
 
-    // === Gacha Logic (Updated for Pity Settings) ===
     window.startGacha = function() {
         if (data.score < COST) return;
         
-        // 確保 child tiers 存在 (如果剛切換到 individual 模式)
         if (masterData.settings.prizeScope === 'individual' && !data.tiers) {
             data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
         }
@@ -926,32 +912,25 @@
         let cumulative = 0;
         let resultTier = tiersSource[0];
         
-        // 保底邏輯
         const pityRareLimit = masterData.settings.pityRareThreshold || 10;
         const pityLegLimit = masterData.settings.pityLegendaryThreshold || 100;
         const pityTargetIdx = masterData.settings.pityBigTarget || 5;
 
         if (data.pityLegendary >= (pityLegLimit - 1)) {
-            // 大保底觸發
-            if (pityTargetIdx === 4) { // 傳奇或神話 (50/50)
+            if (pityTargetIdx === 4) { 
                 resultTier = (Math.random() > 0.5) ? tiersSource[4] : tiersSource[5];
             } else {
-                resultTier = tiersSource[5]; // 必中神話
+                resultTier = tiersSource[5]; 
             }
         } else if (data.pityRare >= (pityRareLimit - 1)) {
-            // 小保底觸發 (稀有以上)
-            // 簡單處理：從 index 2~5 隨機一個，或直接給稀有
-            // 這裡邏輯維持：必中稀有 (index 2)
             resultTier = tiersSource[2]; 
         } else {
-            // 正常機率
             for (let t of tiersSource) {
                 cumulative += t.chance;
                 if (rand <= cumulative) { resultTier = t; break; }
             }
         }
 
-        // 更新計數器
         if (resultTier.index === 5) { data.pityLegendary = 0; data.pityRare = 0; }
         else if (resultTier.index >= 2) { data.pityRare = 0; data.pityLegendary++; }
         else { data.pityRare++; data.pityLegendary++; }
@@ -992,7 +971,6 @@
         step();
     };
 
-    // === 其他功能維持不變，僅微調 ===
     window.useItem = function(idx) {
         const item = data.bag[idx]; if(!confirm('確定要使用「' + item.reward + '」嗎？')) return;
         const match = item.reward.match(/增加點數(\d+)點/);
@@ -1058,10 +1036,7 @@
         let html = '';
         data.deposits.forEach(d => {
             const end = new Date(d.endDate); const isMature = now >= end; const timeLeft = end - now;
-            
-            // 顯示存入時間
             const startStr = new Date(d.startDate).toLocaleString();
-
             let timeStr = "";
             if (isMature) timeStr = "✅ 可領回";
             else {
@@ -1142,21 +1117,15 @@
         reader.onload = function(e) { 
             try { 
                 const imported = JSON.parse(e.target.result); 
-                // 匯入邏輯：自動修復與升級
                 if (imported.children) { 
-                    // v19+ 多人版格式
                     masterData = imported; 
                 } else { 
-                    // v18- 單人版格式
-                    // 1. 如果舊檔案有 tiers，抓出來變成全域獎品 (避免變回預設)
                     if(imported.tiers) {
                         masterData.tiers = imported.tiers;
                     }
-                    // 2. 轉換資料結構
                     masterData.children = [{name:"寶貝1", data:imported}]; 
                     masterData.currentIdx=0; 
                     
-                    // 3. 補齊可能缺失的 settings
                     if(!masterData.settings) {
                         masterData.settings = { 
                             dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30,

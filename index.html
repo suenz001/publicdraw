@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 終極家長版</title>
+    <title>超級幸運抽抽樂 - 時間自訂版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -190,6 +190,8 @@
             <h4>🏦 銀行參數</h4>
             <label class="settings-label">活存日利率 (例如 0.04 代表 4%)</label>
             <input type="number" id="setDailyRate" class="admin-input" step="0.01">
+            <label class="settings-label">活存發放時間 (24小時制，0~23)</label>
+            <input type="number" id="setInterestHour" class="admin-input" placeholder="預設 20" min="0" max="23">
             <label class="settings-label">定存日利率 (例如 0.07 代表 7%)</label>
             <input type="number" id="setFixedRate" class="admin-input" step="0.01">
             <label class="settings-label">定存鎖定天數 (天)</label>
@@ -337,7 +339,7 @@
 <div id="tab-bank" class="section">
     <div class="bank-card">
         <div class="bank-rate">📈 活存利率：<span id="dispDailyRate">4%</span> / 天</div>
-        <div class="bank-desc">每晚 <strong>20:00</strong> 結算，記得來領利息！</div>
+        <div class="bank-desc">每晚 <strong><span id="dispInterestHour">20</span>:00</strong> 結算，記得來領利息！</div>
         <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:5px; border-radius:5px;">
             上次領息：<span id="lastInterestDate">無</span>
         </div>
@@ -395,7 +397,7 @@
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // === Firebase Config ===
+    // === 您的 Firebase 設定 ===
     const firebaseConfig = {
       apiKey: "AIzaSyCArCzhRG6H-07Ooet34ikyP3w9xVq6t1U",
       authDomain: "kidrewardapp.firebaseapp.com",
@@ -406,18 +408,29 @@
       measurementId: "G-L86Y9Y477Y"
     };
 
-    let app, auth, db, userRef;
-    let currentUser = null, isGuest = false;
+    let app, auth, db, userRef, analytics;
+    let currentUser = null;
+    let isGuest = false;
 
     try {
         app = initializeApp(firebaseConfig);
+        analytics = getAnalytics(app);
         auth = getAuth(app);
         db = getFirestore(app);
-    } catch (e) { document.getElementById('loginError').innerText = "系統初始化失敗"; }
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+        document.getElementById('loginError').innerText = "系統初始化失敗，請檢查設定";
+    }
 
-    // === 登入邏輯 ===
     const loginOverlay = document.getElementById('loginOverlay');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnRegister = document.getElementById('btnRegister');
+    const btnForgotPassword = document.getElementById('btnForgotPassword');
+    const btnGuest = document.getElementById('btnGuest');
+    const btnLogout = document.getElementById('btnLogout');
     const loadingMsg = document.getElementById('loadingMsg');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
     const errorMsg = document.getElementById('loginError');
 
     function handleAuthError(error) {
@@ -425,39 +438,47 @@
         let msg = error.code;
         if (msg === 'auth/invalid-email') msg = "Email 格式不正確";
         else if (msg === 'auth/user-not-found' || msg === 'auth/wrong-password' || msg === 'auth/invalid-credential') msg = "帳號或密碼錯誤";
+        else if (msg === 'auth/email-already-in-use') msg = "此 Email 已經註冊過了";
+        else if (msg === 'auth/weak-password') msg = "密碼太弱 (至少需6位)";
+        else if (msg === 'auth/missing-password') msg = "請輸入密碼";
         errorMsg.innerText = msg;
     }
 
-    document.getElementById('btnLogin').addEventListener('click', () => {
-        const e = document.getElementById('emailInput').value, p = document.getElementById('passwordInput').value;
-        if(!e || !p) { errorMsg.innerText="請輸入帳號密碼"; return; }
+    btnLogin.addEventListener('click', () => {
+        const email = emailInput.value; const password = passwordInput.value;
+        if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        signInWithEmailAndPassword(auth, e, p).catch(err => handleAuthError(err));
+        signInWithEmailAndPassword(auth, email, password).catch((error) => { handleAuthError(error); });
     });
 
-    document.getElementById('btnRegister').addEventListener('click', () => {
-        const e = document.getElementById('emailInput').value, p = document.getElementById('passwordInput').value;
-        if(!e || !p) { errorMsg.innerText="請輸入帳號密碼"; return; }
+    btnRegister.addEventListener('click', () => {
+        const email = emailInput.value; const password = passwordInput.value;
+        if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        createUserWithEmailAndPassword(auth, e, p).then(() => alert("註冊成功！")).catch(err => handleAuthError(err));
+        createUserWithEmailAndPassword(auth, email, password).then(() => { alert("註冊成功！已為您登入"); }).catch((error) => { handleAuthError(error); });
     });
 
-    document.getElementById('btnForgotPassword').addEventListener('click', () => {
-        const e = document.getElementById('emailInput').value;
-        if(!e) { errorMsg.innerText="請先輸入 Email"; return; }
-        sendPasswordResetEmail(auth, e).then(() => alert("重設信已寄出！")).catch(err => handleAuthError(err));
+    btnForgotPassword.addEventListener('click', () => {
+        const email = emailInput.value;
+        if(!email) { errorMsg.innerText = "請輸入 Email 後再按忘記密碼"; return; }
+        loadingMsg.style.display = 'block'; errorMsg.innerText = "";
+        sendPasswordResetEmail(auth, email).then(() => { loadingMsg.style.display = 'none'; alert("重設信已寄出！"); }).catch((error) => { handleAuthError(error); });
     });
 
-    document.getElementById('btnGuest').addEventListener('click', () => {
-        isGuest = true; currentUser = { uid: 'guest', email: '遊客模式' };
+    btnGuest.addEventListener('click', () => {
+        isGuest = true;
+        currentUser = { uid: 'guest', email: '遊客模式 (資料僅存本機)' };
         document.getElementById('userEmail').innerText = currentUser.email;
         loginOverlay.style.display = 'none';
         loadDataFromLocal();
         setInterval(updateTimerAndDeposits, 1000);
     });
 
-    document.getElementById('btnLogout').addEventListener('click', () => {
-        if(confirm("確定登出？")) { if(isGuest) location.reload(); else signOut(auth).then(()=>location.reload()); }
+    btnLogout.addEventListener('click', () => {
+        if(confirm("確定要登出嗎？")) { 
+            if(isGuest) location.reload();
+            else signOut(auth).then(() => { location.reload(); }); 
+        }
     });
 
     onAuthStateChanged(auth, async (user) => {
@@ -468,33 +489,42 @@
             loginOverlay.style.display = 'none';
             await loadDataFromCloud();
             setInterval(updateTimerAndDeposits, 1000);
-        } else if(!isGuest) { loginOverlay.style.display = 'flex'; loadingMsg.style.display = 'none'; }
+        } else if(!isGuest) {
+            loginOverlay.style.display = 'flex';
+            loadingMsg.style.display = 'none';
+        }
     });
 
-    // === 資料結構 ===
-    const INTEREST_HOUR = 20;
+    // === 核心資料結構 ===
     const COST = 100;
+
     const DEFAULT_TIERS = [
-        { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘'] },
-        { id: 'uncommon', index: 1, name: '罕見', color: '#00b894', chance: 20, rewards: ['小日記減少二行', '假日玩電動加10分鐘'] },
-        { id: 'rare', index: 2, name: '稀有', color: '#0984e3', chance: 10, rewards: ['小日記減少三行', '假日玩電動加15分鐘'] },
-        { id: 'epic', index: 3, name: '史詩', color: '#6c5ce7', chance: 6, rewards: ['小日記減少四行', '平日可玩電動10分鐘'] },
-        { id: 'legendary', index: 4, name: '傳奇', color: '#e17055', chance: 3, rewards: ['平日可玩電動15分鐘', '零用錢100元'] },
-        { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '增加點數500點'] }
+        { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
+        { id: 'uncommon', index: 1, name: '罕見', color: '#00b894', chance: 20, rewards: ['小日記減少二行', '假日玩電動加10分鐘', '假日爸爸陪玩電動10分鐘', '減少看書時間10分鐘'] },
+        { id: 'rare', index: 2, name: '稀有', color: '#0984e3', chance: 10, rewards: ['小日記減少三行', '假日玩電動加15分鐘', '假日爸爸陪玩電動15分鐘', '減少看書時間15分鐘', '媽媽陪睡覺'] },
+        { id: 'epic', index: 3, name: '史詩', color: '#6c5ce7', chance: 6, rewards: ['小日記減少四行', '平日可玩電動10分鐘', '假日爸爸陪玩電動15分鐘', '增加點數200點'] },
+        { id: 'legendary', index: 4, name: '傳奇', color: '#e17055', chance: 3, rewards: ['平日可玩電動15分鐘', '零用錢100元', '增加點數300點'] },
+        { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '可任意選購500元內的小禮物', '打手心處罰減免一次', '增加點數500點'] }
     ];
 
+    // Master Data
     let masterData = {
         currentIdx: 0,
         settings: {
-            dailyInterest: 0.04, fixedDepositRate: 0.07, fixedDepositDays: 30,
+            dailyInterest: 0.04,
+            interestHour: 20, // 新增：可自訂發放時間
+            fixedDepositRate: 0.07,
+            fixedDepositDays: 30,
             adminPin: null,
             pityRareThreshold: 10, pityLegendaryThreshold: 100, pityBigTarget: 5, // 5=mythic, 4=legendary+
             prizeScope: 'global' // or 'individual'
         },
         tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)),
-        children: []
+        children: [] 
     };
-    let data = null; // 當前小孩
+
+    // 指向當前小孩
+    let data = null; 
 
     function createNewChildData() {
         return { score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)) };
@@ -507,17 +537,20 @@
             if(!masterData.settings.pityRareThreshold) masterData.settings.pityRareThreshold = 10;
             if(!masterData.settings.pityLegendaryThreshold) masterData.settings.pityLegendaryThreshold = 100;
             if(!masterData.settings.prizeScope) masterData.settings.prizeScope = 'global';
+            if(masterData.settings.interestHour === undefined) masterData.settings.interestHour = 20; // 預設 20:00
         } else if (cloudData && cloudData.score !== undefined) {
             // 舊轉新
             let oldData = { ...cloudData };
             delete oldData.tiers;
             masterData.tiers = cloudData.tiers || JSON.parse(JSON.stringify(DEFAULT_TIERS));
+            masterData.settings = { dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30 };
             masterData.children = [{ name: "寶貝1", data: oldData }];
             // 確保小孩也有 tiers 結構 (for individual mode)
             masterData.children[0].data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
         } else {
             // 全新
             masterData.children = [{ name: "寶貝1", data: createNewChildData() }];
+            masterData.settings.interestHour = 20;
         }
         switchChild(masterData.currentIdx);
     }
@@ -527,10 +560,14 @@
         catch (e) { alert("讀取失敗"); }
     }
     function loadDataFromLocal() {
-        const s = localStorage.getItem('kidGacha_v21'); initMasterData(s ? JSON.parse(s) : null);
+        const s = localStorage.getItem('kidGacha_v22'); initMasterData(s ? JSON.parse(s) : null);
     }
     function saveData() {
-        if (isGuest) { localStorage.setItem('kidGacha_v21', JSON.stringify(masterData)); updateUI(); }
+        // 強制數值修正 (避免浮點數誤差)
+        masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
+        masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
+        
+        if (isGuest) { localStorage.setItem('kidGacha_v22', JSON.stringify(masterData)); updateUI(); }
         else if (currentUser) { setDoc(userRef, masterData).then(()=>updateUI()); }
     }
 
@@ -599,6 +636,7 @@
     window.openSettings = function() {
         document.getElementById('settingsModal').style.display = 'block';
         document.getElementById('setDailyRate').value = masterData.settings.dailyInterest;
+        document.getElementById('setInterestHour').value = masterData.settings.interestHour;
         document.getElementById('setFixedRate').value = masterData.settings.fixedDepositRate;
         document.getElementById('setFixedDays').value = masterData.settings.fixedDepositDays;
         document.getElementById('setPityRare').value = masterData.settings.pityRareThreshold;
@@ -650,15 +688,25 @@
         return masterData.tiers;
     }
 
+    window.savePin = function() {
+        const pin = document.getElementById('adminPinInput').value;
+        if(pin.length > 0 && pin.length !== 4) return alert("密碼必須是 4 位數");
+        masterData.settings.adminPin = pin.length === 4 ? pin : null;
+        saveData();
+        alert("密碼已設定 (留空則為取消)");
+    }
+
     window.saveSettings = function() {
         const dRate = parseFloat(document.getElementById('setDailyRate').value);
+        const iHour = parseInt(document.getElementById('setInterestHour').value);
         const fRate = parseFloat(document.getElementById('setFixedRate').value);
         const fDays = parseInt(document.getElementById('setFixedDays').value);
         const pRare = parseInt(document.getElementById('setPityRare').value);
         const pLeg = parseInt(document.getElementById('setPityLeg').value);
         const pTarget = parseInt(document.getElementById('setPityTarget').value);
-        const pin = document.getElementById('adminPinInput').value;
         const scope = document.querySelector('input[name="prizeScope"]:checked').value;
+
+        if(iHour < 0 || iHour > 23) return alert("時間必須是 0~23");
 
         // 驗證機率
         let totalProb = 0;
@@ -672,12 +720,12 @@
 
         // 存回 masterData
         masterData.settings.dailyInterest = dRate;
+        masterData.settings.interestHour = iHour;
         masterData.settings.fixedDepositRate = fRate;
         masterData.settings.fixedDepositDays = fDays;
         masterData.settings.pityRareThreshold = pRare;
         masterData.settings.pityLegendaryThreshold = pLeg;
         masterData.settings.pityBigTarget = pTarget;
-        masterData.settings.adminPin = pin.length === 4 ? pin : null;
         masterData.settings.prizeScope = scope;
 
         // 存回機率到正確的 Tiers
@@ -884,12 +932,12 @@
 
     // === 其他功能維持不變，僅微調 ===
     window.useItem = function(idx) {
-        const item = data.bag[idx]; if(!confirm("使用？")) return;
+        const item = data.bag[idx]; if(!confirm('確定要使用「' + item.reward + '」嗎？')) return;
         const match = item.reward.match(/增加點數(\d+)點/);
         if (match) { 
             const p = parseInt(match[1]); data.score += p; 
             data.history.push({ date: new Date().toLocaleDateString(), reason: `使用: ${item.reward}`, amount: p });
-            alert("已增加 " + p); 
+            alert(`🎊 已增加 ${p} 點！`); 
         } else {
             data.history.push({ date: new Date().toLocaleDateString(), reason: `使用: ${item.reward}`, amount: 0 });
         }
@@ -909,7 +957,10 @@
         if(!amt || amt <= 0 || amt > data.score) return alert("金額錯誤");
         const days = masterData.settings.fixedDepositDays;
         const rate = masterData.settings.fixedDepositRate;
-        if(!confirm(`定存 ${amt} 點？\n鎖定 ${days} 天\n預計獲利 ${Math.floor(amt*rate*days)}`)) return;
+        const estimatedProfit = Math.floor(amt * rate * days);
+        const totalReturn = amt + estimatedProfit;
+
+        if(!confirm(`定存 ${amt} 點？\n鎖定 ${days} 天\n預計獲利 ${estimatedProfit}`)) return;
         
         data.score -= amt;
         const now = new Date(); const end = new Date(now); end.setDate(end.getDate() + days);
@@ -932,7 +983,7 @@
 
     window.updateTimerAndDeposits = function() {
         const now = new Date();
-        let target = new Date(now); target.setHours(INTEREST_HOUR, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1);
+        let target = new Date(now); target.setHours(masterData.settings.interestHour, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1);
         const diff = target - now;
         const h = Math.floor((diff % (86400000)) / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
         document.getElementById('interestTimer').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
@@ -961,7 +1012,7 @@
 
     function checkDailyInterest() {
         const now = new Date(); const today = now.toDateString();
-        if(now.getHours() < INTEREST_HOUR) return;
+        if(now.getHours() < masterData.settings.interestHour) return;
         if(data.lastLoginDate !== today && data.score > 0) {
             const interest = Math.floor(data.score * masterData.settings.dailyInterest);
             if(interest > 0) {
@@ -975,18 +1026,17 @@
 
     function updateUI() {
         document.getElementById('scoreDisplay').innerText = data.score;
-        document.getElementById('dispDailyRate').innerText = (masterData.settings.dailyInterest * 100) + '%';
-        document.getElementById('dispFixedRate').innerText = (masterData.settings.fixedDepositRate * 100) + '%';
+        document.getElementById('dispDailyRate').innerText = parseFloat((masterData.settings.dailyInterest * 100).toFixed(2)) + '%';
+        document.getElementById('dispInterestHour').innerText = masterData.settings.interestHour;
+        document.getElementById('dispFixedRate').innerText = parseFloat((masterData.settings.fixedDepositRate * 100).toFixed(2)) + '%';
         document.getElementById('dispFixedDays').innerText = masterData.settings.fixedDepositDays;
         
-        // 更新機率顯示
         const currentTiers = getCurrentTiers();
         currentTiers.forEach((t, i) => {
             const el = document.getElementById(`label-prob${i}`);
             if(el) el.innerText = t.chance + "%";
         });
 
-        // 更新保底顯示
         document.getElementById('limitRare').innerText = masterData.settings.pityRareThreshold;
         document.getElementById('limitLeg').innerText = masterData.settings.pityLegendaryThreshold;
         document.getElementById('limitTargetName').innerText = (masterData.settings.pityBigTarget == 4) ? "傳奇+" : "神話";

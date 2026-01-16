@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 完美防護版</title>
+    <title>超級幸運抽抽樂 - 資料保全版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -560,14 +560,14 @@
         catch (e) { alert("讀取失敗"); }
     }
     function loadDataFromLocal() {
-        const s = localStorage.getItem('kidGacha_v23'); initMasterData(s ? JSON.parse(s) : null);
+        const s = localStorage.getItem('kidGacha_v24'); initMasterData(s ? JSON.parse(s) : null);
     }
     function saveData() {
         // 強制數值修正 (避免浮點數誤差)
         masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
         
-        if (isGuest) { localStorage.setItem('kidGacha_v23', JSON.stringify(masterData)); updateUI(); }
+        if (isGuest) { localStorage.setItem('kidGacha_v24', JSON.stringify(masterData)); updateUI(); }
         else if (currentUser) { setDoc(userRef, masterData).then(()=>updateUI()); }
     }
 
@@ -1093,7 +1093,45 @@
     function fireConfetti() { const c = document.getElementById('confetti-canvas'); const ctx = c.getContext('2d'); c.width = window.innerWidth; c.height = window.innerHeight; let p = []; const colors = ['#f1c40f', '#e74c3c', '#3498db', '#9b59b6', '#2ecc71']; for(let i=0; i<150; i++) p.push({x: c.width/2, y: c.height/2, r: Math.random()*6+2, dx: Math.random()*10-5, dy: Math.random()*10-5, color: colors[Math.floor(Math.random()*colors.length)], life: 100}); function d() { ctx.clearRect(0,0,c.width,c.height); let active = false; p.forEach(k => { if(k.life>0){ active=true; ctx.beginPath(); ctx.arc(k.x, k.y, k.r, 0, Math.PI*2); ctx.fillStyle=k.color; ctx.fill(); k.x+=k.dx; k.y+=k.dy; k.dy+=0.2; k.life--; }}); if(active) requestAnimationFrame(d); else ctx.clearRect(0,0,c.width,c.height); } d(); }
 
     window.exportData = function() { const json = JSON.stringify(masterData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type: "application/json"})); a.download = `reward_backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-    window.importData = function(input) { const file = input.files[0]; if (!file || !confirm("匯入會覆蓋資料，確定？")) return; const reader = new FileReader(); reader.onload = function(e) { try { const imported = JSON.parse(e.target.result); if (imported.children) { masterData = imported; } else { masterData.children = [{name:"寶貝1", data:imported}]; masterData.currentIdx=0; } saveData(); alert("還原成功！"); switchChild(0); } catch(err) { alert("格式錯誤"); } }; reader.readAsText(file); input.value = ''; }
+    window.importData = function(input) { 
+        const file = input.files[0]; 
+        if (!file || !confirm("匯入會覆蓋資料，確定？")) return; 
+        const reader = new FileReader(); 
+        reader.onload = function(e) { 
+            try { 
+                const imported = JSON.parse(e.target.result); 
+                // 匯入邏輯：自動修復與升級
+                if (imported.children) { 
+                    // v19+ 多人版格式
+                    masterData = imported; 
+                } else { 
+                    // v18- 單人版格式
+                    // 1. 如果舊檔案有 tiers，抓出來變成全域獎品 (避免變回預設)
+                    if(imported.tiers) {
+                        masterData.tiers = imported.tiers;
+                    }
+                    // 2. 轉換資料結構
+                    masterData.children = [{name:"寶貝1", data:imported}]; 
+                    masterData.currentIdx=0; 
+                    
+                    // 3. 補齊可能缺失的 settings
+                    if(!masterData.settings) {
+                        masterData.settings = { 
+                            dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30,
+                            pityRareThreshold: 10, pityLegendaryThreshold: 100, prizeScope: 'global'
+                        };
+                    }
+                } 
+                saveData(); 
+                alert("還原成功！"); 
+                switchChild(0); 
+            } catch(err) { 
+                alert("格式錯誤"); 
+            } 
+        }; 
+        reader.readAsText(file); 
+        input.value = ''; 
+    }
 </script>
 </body>
 </html>

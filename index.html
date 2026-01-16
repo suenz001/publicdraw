@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 多人管理版</title>
+    <title>超級幸運抽抽樂 - 旗艦管理版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -44,65 +44,37 @@
             border: 1px solid #ccc; border-radius: 8px;
             box-sizing: border-box; font-size: 1rem;
         }
-        .btn-group-login {
-            display: flex; gap: 10px; margin-top: 15px;
-        }
-        .btn-login {
-            flex: 1; background: #4a90e2; color: white; border: none; padding: 12px;
-            font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
-        }
-        .btn-register {
-            flex: 1; background: #00b894; color: white; border: none; padding: 12px;
-            font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
-        }
-        .btn-guest {
-            background: #b2bec3; color: white; border: none; padding: 10px;
-            font-size: 0.9rem; border-radius: 50px; cursor: pointer;
-            margin-top: 20px; width: 100%;
-        }
-        .btn-forgot {
-            background: none; border: none; color: #888;
-            margin-top: 15px; font-size: 0.9rem; cursor: pointer;
-            text-decoration: underline;
-        }
+        .btn-group-login { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-login { flex: 1; background: #4a90e2; color: white; border: none; padding: 12px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-register { flex: 1; background: #00b894; color: white; border: none; padding: 12px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-guest { background: #b2bec3; color: white; border: none; padding: 10px; font-size: 0.9rem; border-radius: 50px; cursor: pointer; margin-top: 20px; width: 100%; }
+        .btn-forgot { background: none; border: none; color: #888; margin-top: 15px; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
         #loadingMsg { color: #888; margin-top: 10px; font-size: 0.9rem; display: none; }
         #loginError { color: red; font-size: 0.8rem; margin-top: 10px; min-height: 1.2em; }
 
-        .user-bar {
-            background: #2d3436; color: white; padding: 8px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.85rem;
-        }
-        .btn-logout {
-            background: #d63031; border: none; color: white;
-            padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
-        }
+        .user-bar { background: #2d3436; color: white; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .btn-logout { background: #d63031; border: none; color: white; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
 
-        /* === Header & Child Switcher === */
-        .header {
-            background: var(--header-bg);
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+        /* === Header & Dropdown === */
+        .header { background: var(--header-bg); padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .child-switcher-container { position: relative; display: inline-block; }
         .child-switcher {
-            display: inline-block;
-            background: #f1f2f6;
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #2d3436;
-            cursor: pointer;
-            border: 2px solid #dfe6e9;
+            display: inline-block; background: #f1f2f6; padding: 5px 15px; border-radius: 20px; margin-bottom: 10px;
+            font-weight: bold; color: #2d3436; cursor: pointer; border: 2px solid #dfe6e9; user-select: none;
         }
+        /* 🔴 下拉選單樣式 */
+        .dropdown-menu {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            background-color: white; min-width: 160px; box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 101; border-radius: 10px; overflow: hidden; margin-top: 5px;
+        }
+        .dropdown-menu div { color: black; padding: 12px 16px; text-decoration: none; display: block; cursor: pointer; border-bottom: 1px solid #f1f1f1; }
+        .dropdown-menu div:hover { background-color: #f1f1f1; }
+        .show { display: block; }
+
         .points-val { font-size: 3rem; font-weight: 800; color: #fab1a0; margin: 0; line-height: 1.2; }
         .points-label { font-size: 0.9rem; color: #888; font-weight: bold; }
 
-        /* === Navigation === */
         .nav { display: flex; background: white; margin: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 5px; }
         .nav-btn { flex: 1; padding: 10px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 0.9rem; }
         .nav-btn.active { background: #dfe6e9; color: #2d3436; }
@@ -148,6 +120,7 @@
         .admin-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         .btn-admin { background: #0984e3; color: white; padding: 10px; width: 100%; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-settings { background: #636e72; color: white; padding: 12px; width: 100%; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1.1rem; margin-top:10px; }
         
         .prize-manage-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
         .btn-mini-del { background: #ff7675; color: white; border: none; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; margin-left: 5px;}
@@ -159,6 +132,21 @@
         .btn-backup { background: #6c5ce7; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
         .btn-restore { background: #e17055; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
 
+        /* Settings Modal */
+        #settingsModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 200; display: none;
+            overflow-y: auto;
+        }
+        .settings-content {
+            background: #fff; margin: 20px auto; padding: 25px; width: 90%; max-width: 500px;
+            border-radius: 15px; position: relative;
+        }
+        .settings-group { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .settings-group h4 { margin-top: 0; color: #2d3436; }
+        .settings-label { font-size: 0.9rem; color: #666; margin-bottom: 5px; display: block; }
+        .close-settings { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #999; }
+
         #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
     </style>
 </head>
@@ -167,22 +155,76 @@
 <div id="loginOverlay">
     <div class="login-card">
         <h2 style="margin-top:0; color:#4a90e2;">好孩子獎勵 App</h2>
-        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入以同步雲端資料</p>
-        
+        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入或註冊以同步雲端資料</p>
         <input type="email" id="emailInput" class="login-input" placeholder="電子信箱 (Email)">
         <input type="password" id="passwordInput" class="login-input" placeholder="密碼 (至少6位數)">
-        
         <div class="btn-group-login">
             <button id="btnLogin" class="btn-login">登入</button>
             <button id="btnRegister" class="btn-register">註冊新帳號</button>
         </div>
-        
         <button id="btnForgotPassword" class="btn-forgot">忘記密碼？</button>
-        
         <button id="btnGuest" class="btn-guest">👻 我是遊客 (免登入試玩)</button>
-
         <div id="loadingMsg">資料讀取中...</div>
         <p id="loginError"></p>
+    </div>
+</div>
+
+<div id="settingsModal">
+    <div class="settings-content">
+        <span class="close-settings" onclick="closeSettings()">×</span>
+        <h2 style="margin-top:0; color:#4a90e2;">⚙️ 全域設定</h2>
+        
+        <div class="settings-group">
+            <h4>🏦 銀行參數設定</h4>
+            <label class="settings-label">活存日利率 (例如 0.04 代表 4%)</label>
+            <input type="number" id="setDailyRate" class="admin-input" step="0.01">
+            <label class="settings-label">定存日利率 (例如 0.07 代表 7%)</label>
+            <input type="number" id="setFixedRate" class="admin-input" step="0.01">
+            <label class="settings-label">定存鎖定天數 (天)</label>
+            <input type="number" id="setFixedDays" class="admin-input">
+        </div>
+
+        <div class="settings-group">
+            <h4>🎲 抽卡機率設定 (%)</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><small>普通</small><input type="number" id="prob0" class="admin-input"></div>
+                <div><small>罕見</small><input type="number" id="prob1" class="admin-input"></div>
+                <div><small>稀有</small><input type="number" id="prob2" class="admin-input"></div>
+                <div><small>史詩</small><input type="number" id="prob3" class="admin-input"></div>
+                <div><small>傳奇</small><input type="number" id="prob4" class="admin-input"></div>
+                <div><small>神話</small><input type="number" id="prob5" class="admin-input"></div>
+            </div>
+            <p style="color:#d63031; font-size:0.8rem;">* 請確保總和為 100</p>
+        </div>
+
+        <div class="settings-group">
+            <h4>🎁 獎品內容管理</h4>
+            <select id="tierSelect" class="admin-input" onchange="renderPrizeManager()" style="font-weight:bold; color:#333;">
+                <option value="0">普通</option>
+                <option value="1">罕見</option>
+                <option value="2">稀有</option>
+                <option value="3">史詩</option>
+                <option value="4">傳奇</option>
+                <option value="5">神話</option>
+            </select>
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <input id="newPrizeName" class="admin-input" style="margin:0;" placeholder="輸入新獎品名稱">
+                <button class="btn-admin" style="width:80px; background:#00b894;" onclick="addCustomPrize()">新增</button>
+            </div>
+            <div id="prizeManagerList" style="max-height: 150px; overflow-y: auto; background:#f9f9f9; border:1px solid #eee; border-radius:5px;"></div>
+            <div style="text-align:right; margin-top:5px;">
+                 <button onclick="restoreDefaultPrizes()" style="font-size:0.8rem; color:#999; background:none; border:none; cursor:pointer; text-decoration:underline;">↺ 恢復預設獎品</button>
+            </div>
+        </div>
+
+        <div id="guestBindSection" class="settings-group" style="display:none; background:#fff3cd; padding:10px; border-radius:8px;">
+            <h4 style="color:#d35400;">🔗 遊客轉正 (綁定 Email)</h4>
+            <input type="email" id="bindEmail" class="admin-input" placeholder="設定 Email">
+            <input type="password" id="bindPass" class="admin-input" placeholder="設定密碼">
+            <button class="btn-admin" onclick="bindGuestAccount()">確認綁定並上傳資料</button>
+        </div>
+
+        <button class="btn-admin" onclick="saveSettings()">💾 儲存所有設定</button>
     </div>
 </div>
 
@@ -194,7 +236,10 @@
 </div>
 
 <div class="header">
-    <div id="childSwitcher" class="child-switcher" onclick="switchTab('tab-admin')">讀取中...</div>
+    <div class="child-switcher-container">
+        <div id="childSwitcher" class="child-switcher" onclick="toggleChildDropdown()">讀取中... ▼</div>
+        <div id="childDropdown" class="dropdown-menu"></div>
+    </div>
     <div class="points-label">目前持有獎勵點數</div>
     <div class="points-val" id="scoreDisplay">--</div>
 </div>
@@ -208,12 +253,12 @@
 
 <div id="tab-gacha" class="section active">
     <div class="roulette-container">
-        <div id="box-0" class="roulette-box box-common">普通<span>60%</span></div>
-        <div id="box-1" class="roulette-box box-uncommon">罕見<span>20%</span></div>
-        <div id="box-2" class="roulette-box box-rare">稀有<span>10%</span></div>
-        <div id="box-3" class="roulette-box box-epic">史詩<span>6%</span></div>
-        <div id="box-4" class="roulette-box box-legendary">傳奇<span>3%</span></div>
-        <div id="box-5" class="roulette-box box-mythic">神話<span>1%</span></div>
+        <div id="box-0" class="roulette-box box-common">普通<span id="label-prob0">60%</span></div>
+        <div id="box-1" class="roulette-box box-uncommon">罕見<span id="label-prob1">20%</span></div>
+        <div id="box-2" class="roulette-box box-rare">稀有<span id="label-prob2">10%</span></div>
+        <div id="box-3" class="roulette-box box-epic">史詩<span id="label-prob3">6%</span></div>
+        <div id="box-4" class="roulette-box box-legendary">傳奇<span id="label-prob4">3%</span></div>
+        <div id="box-5" class="roulette-box box-mythic">神話<span id="label-prob5">1%</span></div>
     </div>
     <button id="btnDraw" class="big-btn" onclick="startGacha()">啟動轉盤 (-100點)</button>
     <div class="pity-info">
@@ -232,7 +277,7 @@
 
 <div id="tab-bank" class="section">
     <div class="bank-card">
-        <div class="bank-rate">📈 活存利率：4% / 天</div>
+        <div class="bank-rate">📈 活存利率：<span id="dispDailyRate">4%</span> / 天</div>
         <div class="bank-desc">每晚 <strong>20:00</strong> 結算，記得來領利息！</div>
         <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:5px; border-radius:5px;">
             上次領息：<span id="lastInterestDate">無</span>
@@ -246,7 +291,7 @@
     <div class="deposit-form">
         <h3 style="margin-top:0; color:#2d3436;">🔒 申請超級定存</h3>
         <p style="font-size:0.9rem; color:#666; margin-bottom:10px;">
-            鎖定 <strong>30 天</strong>，每天獲利 <strong>7%</strong>！<br>
+            鎖定 <strong><span id="dispFixedDays">30</span> 天</strong>，每天獲利 <strong><span id="dispFixedRate">7%</span></strong>！<br>
             <span style="color:#d63031;">(超高報酬，但期間絕對不能領出)</span>
         </p>
         <input type="number" id="depositAmount" class="deposit-input" placeholder="輸入要存的點數">
@@ -261,7 +306,6 @@
 <div id="tab-admin" class="section">
     <div class="admin-box" style="border: 2px solid #0984e3;">
         <h3 style="color:#0984e3;">👶 小孩管理</h3>
-        <p style="font-size:0.8rem; color:#666;">點擊切換目前管理的小孩</p>
         <div id="childrenList"></div>
         <div style="margin-top:10px; display:flex; gap:5px;">
             <input id="newChildName" class="admin-input" style="margin:0;" placeholder="輸入新小孩名字">
@@ -276,39 +320,15 @@
         <button class="btn-admin" onclick="addPoints()">發放</button>
     </div>
 
-    <div class="admin-box" style="border: 2px solid #fdcb6e;">
-        <h3 style="color:#d35400;">🎁 獎品管理 (共用)</h3>
-        <p style="font-size:0.8rem; color:#666;">選擇等級，編輯該等級的獎品內容。</p>
-        
-        <select id="tierSelect" class="admin-input" onchange="renderPrizeManager()" style="font-weight:bold; color:#333;">
-            <option value="0">普通 (60%)</option>
-            <option value="1">罕見 (20%)</option>
-            <option value="2">稀有 (10%)</option>
-            <option value="3">史詩 (6%)</option>
-            <option value="4">傳奇 (3%)</option>
-            <option value="5">神話 (1%)</option>
-        </select>
+    <button class="btn-settings" onclick="openSettings()">⚙️ 進入詳細設定 (機率/利率/獎品)</button>
 
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <input id="newPrizeName" class="admin-input" style="margin:0;" placeholder="輸入新獎品名稱">
-            <button class="btn-admin" style="width:80px; background:#00b894;" onclick="addCustomPrize()">新增</button>
-        </div>
-
-        <div id="prizeManagerList" style="max-height: 200px; overflow-y: auto; background:#f9f9f9; border:1px solid #eee; border-radius:5px;"></div>
-        
-        <div style="text-align:right; margin-top:10px;">
-             <button onclick="restoreDefaultPrizes()" style="font-size:0.8rem; color:#999; background:none; border:none; cursor:pointer; text-decoration:underline;">↺ 恢復預設獎品</button>
-        </div>
-    </div>
-
-    <div class="admin-box" style="background:#f0f3ff; border:1px solid #dbe4ff;">
+    <div class="admin-box" style="background:#f0f3ff; border:1px solid #dbe4ff; margin-top:20px;">
         <h3 style="color:#4a69bd;">💾 資料備份 (本地端)</h3>
         <div style="display:flex; justify-content:space-between;">
             <button class="btn-backup" onclick="exportData()">⬇️ 匯出</button>
             <button class="btn-restore" onclick="document.getElementById('importFile').click()">⬆️ 匯入</button>
             <input type="file" id="importFile" style="display:none" onchange="importData(this)" accept=".json">
         </div>
-        <p style="font-size:0.8rem; color:#888; margin-bottom:0;">注意：匯入會覆蓋雲端資料</p>
     </div>
 
     <div class="admin-box">
@@ -340,14 +360,13 @@
 
     let app, auth, db, userRef, analytics;
     let currentUser = null;
-    let isGuest = false; // 是否為遊客模式
+    let isGuest = false;
 
     try {
         app = initializeApp(firebaseConfig);
         analytics = getAnalytics(app);
         auth = getAuth(app);
         db = getFirestore(app);
-        console.log("Firebase initialized");
     } catch (e) {
         console.error("Firebase Init Error:", e);
         document.getElementById('loginError').innerText = "系統初始化失敗，請檢查設定";
@@ -371,21 +390,18 @@
         else if (msg === 'auth/user-not-found' || msg === 'auth/wrong-password' || msg === 'auth/invalid-credential') msg = "帳號或密碼錯誤";
         else if (msg === 'auth/email-already-in-use') msg = "此 Email 已經註冊過了";
         else if (msg === 'auth/weak-password') msg = "密碼太弱 (至少需6位)";
-        else if (msg === 'auth/missing-password') msg = "請輸入密碼";
         errorMsg.innerText = msg;
     }
 
     btnLogin.addEventListener('click', () => {
-        const email = emailInput.value;
-        const password = passwordInput.value;
+        const email = emailInput.value; const password = passwordInput.value;
         if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
         signInWithEmailAndPassword(auth, email, password).catch((error) => { handleAuthError(error); });
     });
 
     btnRegister.addEventListener('click', () => {
-        const email = emailInput.value;
-        const password = passwordInput.value;
+        const email = emailInput.value; const password = passwordInput.value;
         if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
         createUserWithEmailAndPassword(auth, email, password).then(() => { alert("註冊成功！已為您登入"); }).catch((error) => { handleAuthError(error); });
@@ -398,13 +414,12 @@
         sendPasswordResetEmail(auth, email).then(() => { loadingMsg.style.display = 'none'; alert("重設信已寄出！"); }).catch((error) => { handleAuthError(error); });
     });
 
-    // 🔴 遊客模式邏輯
     btnGuest.addEventListener('click', () => {
         isGuest = true;
         currentUser = { uid: 'guest', email: '遊客模式 (資料僅存本機)' };
         document.getElementById('userEmail').innerText = currentUser.email;
         loginOverlay.style.display = 'none';
-        loadDataFromLocal(); // 讀取本機資料
+        loadDataFromLocal();
         setInterval(updateTimerAndDeposits, 1000);
     });
 
@@ -417,8 +432,7 @@
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            isGuest = false;
-            currentUser = user;
+            isGuest = false; currentUser = user;
             userRef = doc(db, "users", user.uid);
             document.getElementById('userEmail').innerText = user.email;
             loginOverlay.style.display = 'none';
@@ -430,12 +444,9 @@
         }
     });
 
-    // === 核心邏輯 (多小孩結構) ===
-    const COST = 100;
-    const DAILY_INTEREST_RATE = 0.04;      
-    const FIXED_DEPOSIT_DAILY_RATE = 0.07; 
+    // === 核心資料結構 ===
     const INTEREST_HOUR = 20;              
-    const FIXED_DEPOSIT_DAYS = 30; 
+    const COST = 100;
 
     const DEFAULT_TIERS = [
         { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
@@ -446,46 +457,43 @@
         { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '可任意選購500元內的小禮物', '打手心處罰減免一次', '增加點數500點'] }
     ];
 
-    // 🔴 Master Data (總資料結構)
+    // Master Data
     let masterData = {
         currentIdx: 0,
-        tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)), // 獎品設定共用
-        children: [
-            // 結構: { name: "小孩1", data: { score:0, bag:[], ... } }
-        ] 
+        settings: {
+            dailyInterest: 0.04,
+            fixedDepositRate: 0.07,
+            fixedDepositDays: 30
+        },
+        tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)),
+        children: [] 
     };
 
-    // 🔴 Data Pointer (指向目前操作的小孩資料)
+    // 指向當前小孩
     let data = null; 
 
-    // 預設單人資料結構 (用於初始化新小孩)
     function createNewChildData() {
-        return {
-            score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: []
-        };
+        return { score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [] };
     }
 
-    // 初始化/升級資料結構
     function initMasterData(cloudData) {
         if (cloudData && cloudData.children) {
-            // 已經是新版資料
             masterData = cloudData;
+            // 確保設定欄位存在
+            if(!masterData.settings) masterData.settings = { dailyInterest: 0.04, fixedDepositRate: 0.07, fixedDepositDays: 30 };
         } else if (cloudData && cloudData.score !== undefined) {
-            // 舊版資料升級：把舊資料塞進第一個小孩
             console.log("舊版資料升級中...");
-            let oldData = { ...cloudData };
-            delete oldData.tiers; // tiers 移到外層
+            let oldData = { ...cloudData }; delete oldData.tiers;
             masterData.tiers = cloudData.tiers || JSON.parse(JSON.stringify(DEFAULT_TIERS));
+            masterData.settings = { dailyInterest: 0.04, fixedDepositRate: 0.07, fixedDepositDays: 30 };
             masterData.children = [{ name: "寶貝1", data: oldData }];
             masterData.currentIdx = 0;
         } else {
-            // 完全新用戶
             masterData.children = [{ name: "寶貝1", data: createNewChildData() }];
             masterData.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+            masterData.settings = { dailyInterest: 0.04, fixedDepositRate: 0.07, fixedDepositDays: 30 };
             masterData.currentIdx = 0;
         }
-        
-        // 綁定 data 指標
         switchChild(masterData.currentIdx);
     }
 
@@ -493,35 +501,48 @@
         try {
             const docSnap = await getDoc(userRef);
             initMasterData(docSnap.exists() ? docSnap.data() : null);
-            saveData(); // 確保結構升級後回存
-        } catch (e) {
-            console.error(e);
-            alert("讀取失敗：" + e.message);
-        }
+            saveData();
+        } catch (e) { console.error(e); alert("讀取失敗：" + e.message); }
     }
 
     function loadDataFromLocal() {
-        const saved = localStorage.getItem('kidGacha_guest_v19');
+        const saved = localStorage.getItem('kidGacha_guest_v20');
         initMasterData(saved ? JSON.parse(saved) : null);
     }
 
     function saveData() {
-        if (isGuest) {
-            localStorage.setItem('kidGacha_guest_v19', JSON.stringify(masterData));
-            updateUI();
-        } else if (currentUser) {
-            setDoc(userRef, masterData).then(() => updateUI()).catch(e => console.error(e));
+        if (isGuest) { localStorage.setItem('kidGacha_guest_v20', JSON.stringify(masterData)); updateUI(); }
+        else if (currentUser) { setDoc(userRef, masterData).then(() => updateUI()).catch(e => console.error(e)); }
+    }
+
+    // === 小孩切換 & 設定 ===
+    window.toggleChildDropdown = function() {
+        document.getElementById("childDropdown").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+        if (!event.target.matches('.child-switcher')) {
+            var dropdowns = document.getElementsByClassName("dropdown-menu");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
         }
     }
 
-    // 🔴 切換小孩功能
     window.switchChild = function(idx) {
         if (idx < 0 || idx >= masterData.children.length) idx = 0;
         masterData.currentIdx = idx;
-        data = masterData.children[idx].data; // 更新指標
-        
-        // 更新 UI
+        data = masterData.children[idx].data;
         document.getElementById('childSwitcher').innerText = masterData.children[idx].name + " ▼";
+        
+        // 更新下拉選單
+        const dropdown = document.getElementById("childDropdown");
+        dropdown.innerHTML = masterData.children.map((c, i) => 
+            `<div onclick="switchChild(${i})">${c.name} ${i === masterData.currentIdx ? '✔' : ''}</div>`
+        ).join('');
+
         checkDailyInterest();
         updateUI();
         renderPrizeManager();
@@ -534,16 +555,12 @@
         masterData.children.push({ name: name, data: createNewChildData() });
         document.getElementById('newChildName').value = '';
         saveData();
-        switchChild(masterData.children.length - 1); // 切換到新小孩
+        switchChild(masterData.children.length - 1);
     }
 
     window.renameChild = function(idx) {
         const newName = prompt("請輸入新名字", masterData.children[idx].name);
-        if (newName) {
-            masterData.children[idx].name = newName;
-            saveData();
-            switchChild(masterData.currentIdx);
-        }
+        if (newName) { masterData.children[idx].name = newName; saveData(); switchChild(masterData.currentIdx); }
     }
 
     window.deleteChild = function(idx) {
@@ -568,13 +585,74 @@
         `).join('');
     }
 
-    // --- 音效 ---
-    let audioCtx = null;
-    function initAudio() { if (!audioCtx) { const AudioContext = window.AudioContext || window.webkitAudioContext; audioCtx = new AudioContext(); const osc = audioCtx.createOscillator(); osc.connect(audioCtx.destination); osc.start(); osc.stop(0.01); } }
-    function playBeep(freq, type, duration) { if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration); }
-    function fireConfetti() { const c = document.getElementById('confetti-canvas'); const ctx = c.getContext('2d'); c.width = window.innerWidth; c.height = window.innerHeight; let p = []; const colors = ['#f1c40f', '#e74c3c', '#3498db', '#9b59b6', '#2ecc71']; for(let i=0; i<150; i++) p.push({x: c.width/2, y: c.height/2, r: Math.random()*6+2, dx: Math.random()*10-5, dy: Math.random()*10-5, color: colors[Math.floor(Math.random()*colors.length)], life: 100}); function d() { ctx.clearRect(0,0,c.width,c.height); let active = false; p.forEach(k => { if(k.life>0){ active=true; ctx.beginPath(); ctx.arc(k.x, k.y, k.r, 0, Math.PI*2); ctx.fillStyle=k.color; ctx.fill(); k.x+=k.dx; k.y+=k.dy; k.dy+=0.2; k.life--; }}); if(active) requestAnimationFrame(d); else ctx.clearRect(0,0,c.width,c.height); } d(); }
+    // === 設定視窗邏輯 ===
+    window.openSettings = function() {
+        document.getElementById('settingsModal').style.display = 'block';
+        document.getElementById('setDailyRate').value = masterData.settings.dailyInterest;
+        document.getElementById('setFixedRate').value = masterData.settings.fixedDepositRate;
+        document.getElementById('setFixedDays').value = masterData.settings.fixedDepositDays;
+        
+        // 填入機率
+        masterData.tiers.forEach((t, i) => {
+            document.getElementById(`prob${i}`).value = t.chance;
+        });
 
-    // --- 核心操作 (使用 data 指標) ---
+        // 遊客綁定顯示
+        document.getElementById('guestBindSection').style.display = isGuest ? 'block' : 'none';
+        
+        renderPrizeManager();
+    }
+
+    window.closeSettings = function() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    window.saveSettings = function() {
+        const dRate = parseFloat(document.getElementById('setDailyRate').value);
+        const fRate = parseFloat(document.getElementById('setFixedRate').value);
+        const fDays = parseInt(document.getElementById('setFixedDays').value);
+        
+        // 驗證機率總和
+        let totalProb = 0;
+        let newProbs = [];
+        for(let i=0; i<6; i++) {
+            let p = parseFloat(document.getElementById(`prob${i}`).value);
+            if(isNaN(p) || p < 0) return alert("機率必須是正數");
+            newProbs.push(p);
+            totalProb += p;
+        }
+        if(Math.abs(totalProb - 100) > 0.1) return alert(`目前機率總和為 ${totalProb}%，必須等於 100%`);
+
+        masterData.settings.dailyInterest = dRate;
+        masterData.settings.fixedDepositRate = fRate;
+        masterData.settings.fixedDepositDays = fDays;
+        
+        // 更新機率
+        newProbs.forEach((p, i) => masterData.tiers[i].chance = p);
+
+        saveData();
+        updateUI(); // 更新顯示的利率
+        closeSettings();
+        alert("設定已儲存！");
+    }
+
+    window.bindGuestAccount = function() {
+        const email = document.getElementById('bindEmail').value;
+        const pass = document.getElementById('bindPass').value;
+        if(!email || !pass) return alert("請輸入完整資料");
+        
+        loadingMsg.style.display = 'block';
+        createUserWithEmailAndPassword(auth, email, pass).then((cred) => {
+            isGuest = false;
+            currentUser = cred.user;
+            userRef = doc(db, "users", currentUser.uid);
+            saveData(); // 把目前的 masterData 存上去
+            alert("綁定成功！資料已上傳雲端");
+            location.reload();
+        }).catch(e => alert("綁定失敗: " + e.message));
+    }
+
+    // === 核心功能 ===
     window.switchTab = function(id) {
         document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -583,60 +661,140 @@
         if(id==='tab-gacha') buttons[0].classList.add('active');
         if(id==='tab-bag') buttons[1].classList.add('active');
         if(id==='tab-bank') buttons[2].classList.add('active');
-        if(id==='tab-admin') { buttons[3].classList.add('active'); renderPrizeManager(); renderChildrenList(); }
+        if(id==='tab-admin') { buttons[3].classList.add('active'); renderChildrenList(); }
     };
 
     window.startGacha = function() {
         if (data.score < COST) return;
-        initAudio(); data.score -= COST; recordHistory('參加抽獎', -COST);
-        let resultTier = null;
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep(f,t,d){let o=audioCtx.createOscillator();let g=audioCtx.createGain();o.type=t;o.frequency.setValueAtTime(f,audioCtx.currentTime);g.gain.setValueAtTime(0.05,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d);}
+        
+        data.score -= COST; 
+        const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        data.history.push({ date: d, reason: '參加抽獎', amount: -COST });
+
+        // 計算機率
+        let rand = Math.random() * 100;
+        let cumulative = 0;
+        let resultTier = masterData.tiers[0];
+        
+        // 保底邏輯
         if (data.pityLegendary >= 99) resultTier = masterData.tiers[5];
         else if (data.pityRare >= 9) resultTier = masterData.tiers[2];
-        else { const rand = Math.random() * 100; let cumulative = 0; resultTier = masterData.tiers[0]; for (let t of masterData.tiers) { cumulative += t.chance; if (rand <= cumulative) { resultTier = t; break; } } }
-        if (resultTier.index === 5) { data.pityLegendary = 0; data.pityRare = 0; } else if (resultTier.index >= 2) { data.pityRare = 0; data.pityLegendary++; } else { data.pityRare++; data.pityLegendary++; }
+        else {
+            for (let t of masterData.tiers) {
+                cumulative += t.chance;
+                if (rand <= cumulative) { resultTier = t; break; }
+            }
+        }
+
+        if (resultTier.index === 5) { data.pityLegendary = 0; data.pityRare = 0; }
+        else if (resultTier.index >= 2) { data.pityRare = 0; data.pityLegendary++; }
+        else { data.pityRare++; data.pityLegendary++; }
+        
         saveData();
-        const btnDraw = document.getElementById('btnDraw'); const finalResult = document.getElementById('finalResult'); btnDraw.disabled = true; finalResult.innerHTML = '<span style="color:#999; font-size:1.5rem">🎰 轉動中...</span>';
-        let currentIdx = 0; const totalLoops = 5; const boxes = document.querySelectorAll('.roulette-box'); let speed = 40; let stepCount = 0; let totalSteps = (totalLoops * 6) + resultTier.index;
+        
+        const btnDraw = document.getElementById('btnDraw');
+        const finalResult = document.getElementById('finalResult');
+        btnDraw.disabled = true;
+        finalResult.innerHTML = '<span style="color:#999; font-size:1.5rem">🎰 轉動中...</span>';
+        
+        let currentIdx = 0; const totalLoops = 5; 
+        const boxes = document.querySelectorAll('.roulette-box');
+        let speed = 40; let stepCount = 0; let totalSteps = (totalLoops * 6) + resultTier.index; 
+        
         function step() {
-            boxes.forEach(b => b.classList.remove('active')); document.getElementById(`box-${currentIdx}`).classList.add('active'); playBeep(800, 'square', 0.03);
+            boxes.forEach(b => b.classList.remove('active'));
+            document.getElementById(`box-${currentIdx}`).classList.add('active');
+            playBeep(800, 'square', 0.03);
             if (stepCount >= totalSteps) {
-                playBeep(600, 'sine', 0.1); setTimeout(() => playBeep(1200, 'sine', 0.3), 150);
-                let finalReward = "銘謝惠顧"; if (resultTier.rewards && resultTier.rewards.length > 0) finalReward = resultTier.rewards[Math.floor(Math.random() * resultTier.rewards.length)];
+                playBeep(600, 'sine', 0.1); 
+                let finalReward = "銘謝惠顧";
+                if (resultTier.rewards && resultTier.rewards.length > 0) {
+                    finalReward = resultTier.rewards[Math.floor(Math.random() * resultTier.rewards.length)];
+                }
                 finalResult.innerHTML = `<h2 style="color:${resultTier.color}">${resultTier.name}級獎勵！</h2><p style="font-weight:bold; font-size:1.3rem; color:#333;">${finalReward}</p>`;
                 data.bag.unshift({ tierName: resultTier.name, color: resultTier.color, reward: finalReward, id: Date.now() });
-                saveData(); btnDraw.disabled = false; updateUI(); if (resultTier.index >= 2) fireConfetti(); return;
+                saveData();
+                btnDraw.disabled = false; updateUI();
+                if (resultTier.index >= 2) fireConfetti();
+                return;
             }
-            stepCount++; currentIdx++; if (currentIdx >= 6) currentIdx = 0; let remainingSteps = totalSteps - stepCount; if (remainingSteps < 8) speed += (10 - remainingSteps) * 20; else if (speed > 40) speed = 40; setTimeout(step, speed);
-        } step();
+            stepCount++; currentIdx++; if (currentIdx >= 6) currentIdx = 0;
+            let remainingSteps = totalSteps - stepCount;
+            if (remainingSteps < 8) speed += (10 - remainingSteps) * 20; else if (speed > 40) speed = 40;
+            setTimeout(step, speed);
+        }
+        step();
     };
 
     window.useItem = function(idx) {
-        const item = data.bag[idx]; if(!confirm(`確定使用「${item.reward}」嗎？`)) return;
+        const item = data.bag[idx];
+        if(!confirm(`確定使用「${item.reward}」嗎？`)) return;
         const match = item.reward.match(/增加點數(\d+)點/);
-        if (match) { const p = parseInt(match[1]); data.score += p; recordHistory(`使用點數卡: ${item.reward}`, p); alert(`🎊 已增加 ${p} 點！`); } else { recordHistory(`使用: ${item.reward}`, 0); }
-        data.bag.splice(idx, 1); saveData();
+        const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        
+        if (match) {
+            const p = parseInt(match[1]); data.score += p;
+            data.history.push({ date: d, reason: `使用點數卡: ${item.reward}`, amount: p });
+            alert(`🎊 已增加 ${p} 點！`);
+        } else {
+            data.history.push({ date: d, reason: `使用: ${item.reward}`, amount: 0 });
+        }
+        data.bag.splice(idx, 1);
+        saveData();
     };
 
     window.addPoints = function() {
-        const r = document.getElementById('reasonIn').value; const p = parseInt(document.getElementById('pointsIn').value);
+        const r = document.getElementById('reasonIn').value;
+        const p = parseInt(document.getElementById('pointsIn').value);
         if (!r || !p) return alert('請輸入完整資訊');
-        data.score += p; recordHistory(r, p); saveData(); alert(`已發放 ${p} 點`); document.getElementById('reasonIn').value = '';
+        data.score += p; 
+        const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        data.history.push({ date: d, reason: r, amount: p });
+        saveData(); alert(`已發放 ${p} 點`); document.getElementById('reasonIn').value = '';
     };
 
     window.createDeposit = function() {
         const amount = parseInt(document.getElementById('depositAmount').value);
-        if (!amount || amount <= 0) return alert("請輸入正確金額"); if (amount > data.score) return alert("點數不足！");
-        const estimatedProfit = Math.floor(amount * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS); const totalReturn = amount + estimatedProfit;
-        if(!confirm(`確定要將 ${amount} 點存入定存嗎？\n\n📅 鎖定 ${FIXED_DEPOSIT_DAYS} 天\n📈 預計獲利 +${estimatedProfit} 點\n💰 到期可領 ${totalReturn} 點\n\n期間內無法取出喔！`)) return;
-        data.score -= amount; const now = new Date(); const endDate = new Date(now); endDate.setDate(endDate.getDate() + FIXED_DEPOSIT_DAYS);
+        if (!amount || amount <= 0) return alert("請輸入正確金額");
+        if (amount > data.score) return alert("點數不足！");
+        
+        const rate = masterData.settings.fixedDepositRate;
+        const days = masterData.settings.fixedDepositDays;
+        const estimatedProfit = Math.floor(amount * rate * days);
+        const totalReturn = amount + estimatedProfit;
+
+        if(!confirm(`確定要將 ${amount} 點存入定存嗎？\n\n📅 鎖定 ${days} 天\n📈 預計獲利 +${estimatedProfit} 點\n💰 到期可領 ${totalReturn} 點`)) return;
+
+        data.score -= amount;
+        const now = new Date();
+        const endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + days); 
+        
         data.deposits.push({ id: Date.now(), amount: amount, startDate: now.toISOString(), endDate: endDate.toISOString(), status: 'active' });
-        recordHistory(`🏦 申請定存`, -amount); saveData(); alert("定存申請成功！"); document.getElementById('depositAmount').value = "";
+        
+        const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        data.history.push({ date: d, reason: `🏦 申請定存`, amount: -amount });
+        
+        saveData();
+        alert("定存申請成功！");
+        document.getElementById('depositAmount').value = "";
     };
 
     window.redeemDeposit = function(id) {
         const idx = data.deposits.findIndex(d => d.id === id); if (idx === -1) return;
-        const deposit = data.deposits[idx]; const principal = deposit.amount; const interest = Math.floor(principal * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS); const total = principal + interest;
-        data.score += total; recordHistory(`💰 定存到期領回`, total); data.deposits.splice(idx, 1); saveData();
+        const deposit = data.deposits[idx];
+        const principal = deposit.amount;
+        const interest = Math.floor(principal * masterData.settings.fixedDepositRate * masterData.settings.fixedDepositDays);
+        const total = principal + interest;
+        
+        data.score += total;
+        const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        data.history.push({ date: d, reason: `💰 定存到期領回`, amount: total });
+        
+        data.deposits.splice(idx, 1);
+        saveData();
         alert(`恭喜！定存到期！\n本金：${principal}\n利息：${interest}\n總共獲得：${total} 點！`);
     };
 
@@ -650,24 +808,63 @@
     };
 
     window.renderPrizeManager = function() {
-        const select = document.getElementById('tierSelect'); const listDiv = document.getElementById('prizeManagerList'); const selectedIndex = parseInt(select.value); const tierData = masterData.tiers[selectedIndex];
-        select.style.borderColor = tierData.color; select.style.color = tierData.color; let html = '';
-        if (tierData.rewards.length === 0) { html = '<div style="padding:10px; text-align:center; color:#999;">此等級目前沒有獎品</div>'; } else { tierData.rewards.forEach((reward, idx) => { html += `<div class="prize-manage-item"><span>${reward}</span><div><button class="btn-mini-edit" onclick="editPrize(${selectedIndex}, ${idx})">✏️</button><button class="btn-mini-del" onclick="removePrize(${selectedIndex}, ${idx})">🗑️</button></div></div>`; }); }
+        const select = document.getElementById('tierSelect');
+        const listDiv = document.getElementById('prizeManagerList');
+        const selectedIndex = parseInt(select.value);
+        const tierData = masterData.tiers[selectedIndex];
+        select.style.borderColor = tierData.color;
+        select.style.color = tierData.color;
+        let html = '';
+        if (tierData.rewards.length === 0) { html = '<div style="padding:10px; text-align:center; color:#999;">此等級目前沒有獎品</div>'; } 
+        else {
+            tierData.rewards.forEach((reward, idx) => {
+                html += `<div class="prize-manage-item"><span>${reward}</span><div><button class="btn-mini-edit" onclick="editPrize(${selectedIndex}, ${idx})">✏️</button><button class="btn-mini-del" onclick="removePrize(${selectedIndex}, ${idx})">🗑️</button></div></div>`;
+            });
+        }
         listDiv.innerHTML = html;
     };
-    window.addCustomPrize = function() { const select = document.getElementById('tierSelect'); const input = document.getElementById('newPrizeName'); const name = input.value.trim(); const tierIdx = parseInt(select.value); if (!name) return alert("請輸入獎品名稱"); masterData.tiers[tierIdx].rewards.push(name); saveData(); input.value = ''; renderPrizeManager(); };
-    window.removePrize = function(tierIdx, rewardIdx) { if(!confirm(`確定要刪除「${masterData.tiers[tierIdx].rewards[rewardIdx]}」嗎？`)) return; masterData.tiers[tierIdx].rewards.splice(rewardIdx, 1); saveData(); renderPrizeManager(); };
-    window.editPrize = function(tierIdx, rewardIdx) { const oldName = masterData.tiers[tierIdx].rewards[rewardIdx]; const newName = prompt("修改獎品名稱：", oldName); if (newName && newName.trim() !== "") { masterData.tiers[tierIdx].rewards[rewardIdx] = newName.trim(); saveData(); renderPrizeManager(); } };
-    window.restoreDefaultPrizes = function() { if(confirm("⚠️ 確定要恢復成「預設獎品」嗎？")) { masterData.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS)); saveData(); renderPrizeManager(); alert("已恢復預設值。"); } };
+    window.addCustomPrize = function() {
+        const select = document.getElementById('tierSelect');
+        const input = document.getElementById('newPrizeName');
+        const name = input.value.trim();
+        const tierIdx = parseInt(select.value);
+        if (!name) return alert("請輸入獎品名稱");
+        masterData.tiers[tierIdx].rewards.push(name); saveData(); input.value = ''; renderPrizeManager();
+    };
+    window.removePrize = function(tierIdx, rewardIdx) {
+        if(!confirm(`確定要刪除「${masterData.tiers[tierIdx].rewards[rewardIdx]}」嗎？`)) return;
+        masterData.tiers[tierIdx].rewards.splice(rewardIdx, 1); saveData(); renderPrizeManager();
+    };
+    window.editPrize = function(tierIdx, rewardIdx) {
+        const oldName = masterData.tiers[tierIdx].rewards[rewardIdx];
+        const newName = prompt("修改獎品名稱：", oldName);
+        if (newName && newName.trim() !== "") {
+            masterData.tiers[tierIdx].rewards[rewardIdx] = newName.trim(); saveData(); renderPrizeManager();
+        }
+    };
+    window.restoreDefaultPrizes = function() {
+        if(confirm("⚠️ 確定要恢復成「預設獎品」嗎？")) {
+            masterData.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+            // 恢復機率顯示
+            updateUI();
+            saveData();
+            renderPrizeManager();
+            alert("已恢復預設值。");
+        }
+    };
 
     window.updateTimerAndDeposits = function() {
         const now = new Date();
-        let target = new Date(now); target.setHours(INTEREST_HOUR, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1);
+        let target = new Date(now); target.setHours(INTEREST_HOUR, 0, 0, 0);
+        if (now > target) target.setDate(target.getDate() + 1);
         const diff = target - now;
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((diff % (1000 * 60)) / 1000);
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
         document.getElementById('interestTimer').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
         
-        const list = document.getElementById('depositList'); const empty = document.getElementById('depositEmpty');
+        const list = document.getElementById('depositList');
+        const empty = document.getElementById('depositEmpty');
         if (data.deposits.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
         empty.style.display = 'none';
         let html = '';
@@ -682,7 +879,7 @@
                 const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                 timeStr = `⏳ 剩餘 ${days}天 ${hours}時 ${mins}分`;
             }
-            const profit = Math.floor(d.amount * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS);
+            const profit = Math.floor(d.amount * masterData.settings.fixedDepositRate * masterData.settings.fixedDepositDays);
             html += `<div class="deposit-item"><div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894; font-size:0.9rem;">(預期+${profit})</span></div><div class="deposit-time">${timeStr}</div><button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature ? '' : 'disabled'}>${isMature ? '💰 立即領取' : '未到期'}</button></div>`;
         });
         list.innerHTML = html;
@@ -692,16 +889,36 @@
         const now = new Date(); const currentHour = now.getHours(); const todayStr = now.toDateString();
         if (currentHour < INTEREST_HOUR) return;
         if (data.lastLoginDate !== todayStr && data.score > 0) {
-            const interest = Math.floor(data.score * DAILY_INTEREST_RATE);
-            if (interest > 0) { data.score += interest; recordHistory(`💰 夜間活存結算 (4%)`, interest); alert(`🌙 晚上好！${masterData.children[masterData.currentIdx].name}\n銀行利息已入帳：+${interest} 點！`); }
+            const interest = Math.floor(data.score * masterData.settings.dailyInterest);
+            if (interest > 0) {
+                data.score += interest;
+                const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                data.history.push({ date: d, reason: `💰 夜間活存結算 (${(masterData.settings.dailyInterest*100).toFixed(0)}%)`, amount: interest });
+                alert(`🌙 晚上好！${masterData.children[masterData.currentIdx].name}\n銀行利息已入帳：+${interest} 點！`);
+            }
             data.lastLoginDate = todayStr; saveData();
         } else if (data.lastLoginDate === "") { data.lastLoginDate = todayStr; saveData(); }
     }
+
     function updateUI() {
         document.getElementById('scoreDisplay').innerText = data.score;
         document.getElementById('lastInterestDate').innerText = data.lastLoginDate || "無";
+        
+        // 更新顯示的利率
+        document.getElementById('dispDailyRate').innerText = (masterData.settings.dailyInterest * 100) + '%';
+        document.getElementById('dispFixedRate').innerText = (masterData.settings.fixedDepositRate * 100) + '%';
+        document.getElementById('dispFixedDays').innerText = masterData.settings.fixedDepositDays;
+
+        // 更新轉盤上的機率顯示
+        masterData.tiers.forEach((t, i) => {
+            const el = document.getElementById(`label-prob${i}`);
+            if(el) el.innerText = t.chance + "%";
+        });
+
         const btn = document.getElementById('btnDraw');
-        if (data.score < COST) { btn.innerText = `點數不足 (缺${COST - data.score})`; btn.disabled = true; } else { btn.innerText = `啟動轉盤 (-${COST}點)`; btn.disabled = false; }
+        if (data.score < COST) { btn.innerText = `點數不足 (缺${COST - data.score})`; btn.disabled = true; } 
+        else { btn.innerText = `啟動轉盤 (-${COST}點)`; btn.disabled = false; }
+        
         const bagList = document.getElementById('bagList'); bagList.innerHTML = '';
         if (data.bag.length === 0) document.getElementById('bagEmpty').style.display = 'block';
         else {
@@ -712,12 +929,18 @@
                 bagList.appendChild(div);
             });
         }
+        
         const histList = document.getElementById('historyList');
         histList.innerHTML = data.history.slice().reverse().map(h => `<div style="border-bottom:1px solid #eee; padding:8px 0;">${h.date} - ${h.reason} <span style="float:right; font-weight:bold; color:${h.amount>0?'#00b894':'#e17055'}">${h.amount}</span></div>`).join('');
-        document.getElementById('pityRareDisp').innerText = data.pityRare; document.getElementById('pityLegDisp').innerText = data.pityLegendary;
+        
+        document.getElementById('pityRareDisp').innerText = data.pityRare;
+        document.getElementById('pityLegDisp').innerText = data.pityLegendary;
+        
         window.updateTimerAndDeposits();
     }
-    function recordHistory(r, a) { const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; data.history.push({ date: d, reason: r, amount: a }); }
+
+    function fireConfetti() { const c = document.getElementById('confetti-canvas'); const ctx = c.getContext('2d'); c.width = window.innerWidth; c.height = window.innerHeight; let p = []; const colors = ['#f1c40f', '#e74c3c', '#3498db', '#9b59b6', '#2ecc71']; for(let i=0; i<150; i++) p.push({x: c.width/2, y: c.height/2, r: Math.random()*6+2, dx: Math.random()*10-5, dy: Math.random()*10-5, color: colors[Math.floor(Math.random()*colors.length)], life: 100}); function d() { ctx.clearRect(0,0,c.width,c.height); let active = false; p.forEach(k => { if(k.life>0){ active=true; ctx.beginPath(); ctx.arc(k.x, k.y, k.r, 0, Math.PI*2); ctx.fillStyle=k.color; ctx.fill(); k.x+=k.dx; k.y+=k.dy; k.dy+=0.2; k.life--; }}); if(active) requestAnimationFrame(d); else ctx.clearRect(0,0,c.width,c.height); } d(); }
+
     window.exportData = function() { const json = JSON.stringify(masterData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type: "application/json"})); a.download = `reward_backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
     window.importData = function(input) { const file = input.files[0]; if (!file || !confirm("⚠️ 警告：匯入新檔案將會「覆蓋」目前的雲端紀錄！\n確定要繼續嗎？")) return; const reader = new FileReader(); reader.onload = function(e) { try { const imported = JSON.parse(e.target.result); if (imported.children) { masterData = imported; } else { masterData.children = [{name:"寶貝1", data:imported}]; masterData.currentIdx=0; if(imported.tiers) masterData.tiers=imported.tiers; } saveData(); alert("✅ 資料還原成功！"); switchChild(0); } catch(err) { alert("❌ 格式錯誤"); } }; reader.readAsText(file); input.value = ''; }
 </script>

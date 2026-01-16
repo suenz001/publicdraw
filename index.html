@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 忘記密碼版</title>
+    <title>超級幸運抽抽樂 - 多人管理版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -55,7 +55,11 @@
             flex: 1; background: #00b894; color: white; border: none; padding: 12px;
             font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
         }
-        /* 🔴 新增：忘記密碼按鈕樣式 */
+        .btn-guest {
+            background: #b2bec3; color: white; border: none; padding: 10px;
+            font-size: 0.9rem; border-radius: 50px; cursor: pointer;
+            margin-top: 20px; width: 100%;
+        }
         .btn-forgot {
             background: none; border: none; color: #888;
             margin-top: 15px; font-size: 0.9rem; cursor: pointer;
@@ -74,10 +78,31 @@
             padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
         }
 
-        /* === UI 元件 === */
-        .header { background: var(--header-bg); padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-        .points-val { font-size: 3rem; font-weight: 800; color: #fab1a0; margin: 5px 0; }
+        /* === Header & Child Switcher === */
+        .header {
+            background: var(--header-bg);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .child-switcher {
+            display: inline-block;
+            background: #f1f2f6;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #2d3436;
+            cursor: pointer;
+            border: 2px solid #dfe6e9;
+        }
+        .points-val { font-size: 3rem; font-weight: 800; color: #fab1a0; margin: 0; line-height: 1.2; }
         .points-label { font-size: 0.9rem; color: #888; font-weight: bold; }
+
+        /* === Navigation === */
         .nav { display: flex; background: white; margin: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 5px; }
         .nav-btn { flex: 1; padding: 10px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 0.9rem; }
         .nav-btn.active { background: #dfe6e9; color: #2d3436; }
@@ -128,6 +153,9 @@
         .btn-mini-del { background: #ff7675; color: white; border: none; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; margin-left: 5px;}
         .btn-mini-edit { background: #74b9ff; color: white; border: none; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem; }
         
+        .child-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .child-active { background-color: #e8f7f0; border-left: 4px solid #00b894; }
+        
         .btn-backup { background: #6c5ce7; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
         .btn-restore { background: #e17055; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
 
@@ -139,7 +167,7 @@
 <div id="loginOverlay">
     <div class="login-card">
         <h2 style="margin-top:0; color:#4a90e2;">好孩子獎勵 App</h2>
-        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入或註冊以同步雲端資料</p>
+        <p style="color:#666; margin-bottom:20px; font-size:0.9rem;">請登入以同步雲端資料</p>
         
         <input type="email" id="emailInput" class="login-input" placeholder="電子信箱 (Email)">
         <input type="password" id="passwordInput" class="login-input" placeholder="密碼 (至少6位數)">
@@ -150,6 +178,8 @@
         </div>
         
         <button id="btnForgotPassword" class="btn-forgot">忘記密碼？</button>
+        
+        <button id="btnGuest" class="btn-guest">👻 我是遊客 (免登入試玩)</button>
 
         <div id="loadingMsg">資料讀取中...</div>
         <p id="loginError"></p>
@@ -164,6 +194,7 @@
 </div>
 
 <div class="header">
+    <div id="childSwitcher" class="child-switcher" onclick="switchTab('tab-admin')">讀取中...</div>
     <div class="points-label">目前持有獎勵點數</div>
     <div class="points-val" id="scoreDisplay">--</div>
 </div>
@@ -228,6 +259,16 @@
 </div>
 
 <div id="tab-admin" class="section">
+    <div class="admin-box" style="border: 2px solid #0984e3;">
+        <h3 style="color:#0984e3;">👶 小孩管理</h3>
+        <p style="font-size:0.8rem; color:#666;">點擊切換目前管理的小孩</p>
+        <div id="childrenList"></div>
+        <div style="margin-top:10px; display:flex; gap:5px;">
+            <input id="newChildName" class="admin-input" style="margin:0;" placeholder="輸入新小孩名字">
+            <button class="btn-admin" style="width:80px;" onclick="addNewChild()">新增</button>
+        </div>
+    </div>
+
     <div class="admin-box">
         <h3>💰 發放點數</h3>
         <input type="text" id="reasonIn" class="admin-input" placeholder="原因">
@@ -236,7 +277,7 @@
     </div>
 
     <div class="admin-box" style="border: 2px solid #fdcb6e;">
-        <h3 style="color:#d35400;">🎁 獎品管理</h3>
+        <h3 style="color:#d35400;">🎁 獎品管理 (共用)</h3>
         <p style="font-size:0.8rem; color:#666;">選擇等級，編輯該等級的獎品內容。</p>
         
         <select id="tierSelect" class="admin-input" onchange="renderPrizeManager()" style="font-weight:bold; color:#333;">
@@ -299,6 +340,7 @@
 
     let app, auth, db, userRef, analytics;
     let currentUser = null;
+    let isGuest = false; // 是否為遊客模式
 
     try {
         app = initializeApp(firebaseConfig);
@@ -315,6 +357,7 @@
     const btnLogin = document.getElementById('btnLogin');
     const btnRegister = document.getElementById('btnRegister');
     const btnForgotPassword = document.getElementById('btnForgotPassword');
+    const btnGuest = document.getElementById('btnGuest');
     const btnLogout = document.getElementById('btnLogout');
     const loadingMsg = document.getElementById('loadingMsg');
     const emailInput = document.getElementById('emailInput');
@@ -337,9 +380,7 @@
         const password = passwordInput.value;
         if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => { })
-            .catch((error) => { handleAuthError(error); });
+        signInWithEmailAndPassword(auth, email, password).catch((error) => { handleAuthError(error); });
     });
 
     btnRegister.addEventListener('click', () => {
@@ -347,50 +388,49 @@
         const password = passwordInput.value;
         if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => { alert("註冊成功！已為您登入"); })
-            .catch((error) => { handleAuthError(error); });
+        createUserWithEmailAndPassword(auth, email, password).then(() => { alert("註冊成功！已為您登入"); }).catch((error) => { handleAuthError(error); });
     });
 
-    // 🔴 新增：忘記密碼邏輯
     btnForgotPassword.addEventListener('click', () => {
         const email = emailInput.value;
-        if(!email) { 
-            errorMsg.innerText = "請先在上方輸入您的電子信箱，再點擊「忘記密碼」"; 
-            return; 
-        }
-        loadingMsg.style.display = 'block';
-        errorMsg.innerText = "";
-        
-        sendPasswordResetEmail(auth, email)
-            .then(() => {
-                loadingMsg.style.display = 'none';
-                alert("已發送重設密碼信件至 " + email + "，請去收信！");
-            })
-            .catch((error) => {
-                handleAuthError(error);
-            });
+        if(!email) { errorMsg.innerText = "請輸入 Email 後再按忘記密碼"; return; }
+        loadingMsg.style.display = 'block'; errorMsg.innerText = "";
+        sendPasswordResetEmail(auth, email).then(() => { loadingMsg.style.display = 'none'; alert("重設信已寄出！"); }).catch((error) => { handleAuthError(error); });
+    });
+
+    // 🔴 遊客模式邏輯
+    btnGuest.addEventListener('click', () => {
+        isGuest = true;
+        currentUser = { uid: 'guest', email: '遊客模式 (資料僅存本機)' };
+        document.getElementById('userEmail').innerText = currentUser.email;
+        loginOverlay.style.display = 'none';
+        loadDataFromLocal(); // 讀取本機資料
+        setInterval(updateTimerAndDeposits, 1000);
     });
 
     btnLogout.addEventListener('click', () => {
-        if(confirm("確定要登出嗎？")) { signOut(auth).then(() => { location.reload(); }); }
+        if(confirm("確定要登出嗎？")) { 
+            if(isGuest) location.reload();
+            else signOut(auth).then(() => { location.reload(); }); 
+        }
     });
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            isGuest = false;
             currentUser = user;
             userRef = doc(db, "users", user.uid);
             document.getElementById('userEmail').innerText = user.email;
             loginOverlay.style.display = 'none';
             await loadDataFromCloud();
             setInterval(updateTimerAndDeposits, 1000);
-        } else {
+        } else if(!isGuest) {
             loginOverlay.style.display = 'flex';
             loadingMsg.style.display = 'none';
         }
     });
 
-    // === 核心邏輯 ===
+    // === 核心邏輯 (多小孩結構) ===
     const COST = 100;
     const DAILY_INTEREST_RATE = 0.04;      
     const FIXED_DEPOSIT_DAILY_RATE = 0.07; 
@@ -406,37 +446,126 @@
         { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '可任意選購500元內的小禮物', '打手心處罰減免一次', '增加點數500點'] }
     ];
 
-    let data = {
-        score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: null
+    // 🔴 Master Data (總資料結構)
+    let masterData = {
+        currentIdx: 0,
+        tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)), // 獎品設定共用
+        children: [
+            // 結構: { name: "小孩1", data: { score:0, bag:[], ... } }
+        ] 
     };
+
+    // 🔴 Data Pointer (指向目前操作的小孩資料)
+    let data = null; 
+
+    // 預設單人資料結構 (用於初始化新小孩)
+    function createNewChildData() {
+        return {
+            score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: []
+        };
+    }
+
+    // 初始化/升級資料結構
+    function initMasterData(cloudData) {
+        if (cloudData && cloudData.children) {
+            // 已經是新版資料
+            masterData = cloudData;
+        } else if (cloudData && cloudData.score !== undefined) {
+            // 舊版資料升級：把舊資料塞進第一個小孩
+            console.log("舊版資料升級中...");
+            let oldData = { ...cloudData };
+            delete oldData.tiers; // tiers 移到外層
+            masterData.tiers = cloudData.tiers || JSON.parse(JSON.stringify(DEFAULT_TIERS));
+            masterData.children = [{ name: "寶貝1", data: oldData }];
+            masterData.currentIdx = 0;
+        } else {
+            // 完全新用戶
+            masterData.children = [{ name: "寶貝1", data: createNewChildData() }];
+            masterData.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+            masterData.currentIdx = 0;
+        }
+        
+        // 綁定 data 指標
+        switchChild(masterData.currentIdx);
+    }
 
     async function loadDataFromCloud() {
         try {
             const docSnap = await getDoc(userRef);
-            if (docSnap.exists()) {
-                const cloudData = docSnap.data();
-                data = { ...data, ...cloudData };
-                if (!data.tiers || data.tiers.length === 0) data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
-                checkDailyInterest();
-                updateUI();
-                renderPrizeManager();
-                console.log("雲端資料同步完成");
-            } else {
-                console.log("新用戶，建立初始資料");
-                data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
-                saveDataToCloud();
-                updateUI();
-                renderPrizeManager();
-            }
+            initMasterData(docSnap.exists() ? docSnap.data() : null);
+            saveData(); // 確保結構升級後回存
         } catch (e) {
             console.error(e);
-            alert("讀取雲端資料失敗：" + e.message + "\n(請確認檔案已上傳至網頁空間)");
+            alert("讀取失敗：" + e.message);
         }
     }
 
-    async function saveDataToCloud() {
-        if (!currentUser) return;
-        try { await setDoc(userRef, data); updateUI(); } catch (e) { console.error("存檔失敗", e); }
+    function loadDataFromLocal() {
+        const saved = localStorage.getItem('kidGacha_guest_v19');
+        initMasterData(saved ? JSON.parse(saved) : null);
+    }
+
+    function saveData() {
+        if (isGuest) {
+            localStorage.setItem('kidGacha_guest_v19', JSON.stringify(masterData));
+            updateUI();
+        } else if (currentUser) {
+            setDoc(userRef, masterData).then(() => updateUI()).catch(e => console.error(e));
+        }
+    }
+
+    // 🔴 切換小孩功能
+    window.switchChild = function(idx) {
+        if (idx < 0 || idx >= masterData.children.length) idx = 0;
+        masterData.currentIdx = idx;
+        data = masterData.children[idx].data; // 更新指標
+        
+        // 更新 UI
+        document.getElementById('childSwitcher').innerText = masterData.children[idx].name + " ▼";
+        checkDailyInterest();
+        updateUI();
+        renderPrizeManager();
+        renderChildrenList();
+    }
+
+    window.addNewChild = function() {
+        const name = document.getElementById('newChildName').value;
+        if (!name) return alert("請輸入名字");
+        masterData.children.push({ name: name, data: createNewChildData() });
+        document.getElementById('newChildName').value = '';
+        saveData();
+        switchChild(masterData.children.length - 1); // 切換到新小孩
+    }
+
+    window.renameChild = function(idx) {
+        const newName = prompt("請輸入新名字", masterData.children[idx].name);
+        if (newName) {
+            masterData.children[idx].name = newName;
+            saveData();
+            switchChild(masterData.currentIdx);
+        }
+    }
+
+    window.deleteChild = function(idx) {
+        if (masterData.children.length <= 1) return alert("至少要保留一個小孩");
+        if (confirm(`確定要刪除「${masterData.children[idx].name}」的所有資料嗎？無法復原！`)) {
+            masterData.children.splice(idx, 1);
+            switchChild(0);
+            saveData();
+        }
+    }
+
+    function renderChildrenList() {
+        const list = document.getElementById('childrenList');
+        list.innerHTML = masterData.children.map((c, i) => `
+            <div class="child-item ${i === masterData.currentIdx ? 'child-active' : ''}">
+                <span onclick="switchChild(${i})" style="cursor:pointer; flex:1; font-weight:bold;">${c.name}</span>
+                <div>
+                    <button class="btn-mini-edit" onclick="renameChild(${i})">✏️</button>
+                    <button class="btn-mini-del" onclick="deleteChild(${i})">🗑️</button>
+                </div>
+            </div>
+        `).join('');
     }
 
     // --- 音效 ---
@@ -445,7 +574,7 @@
     function playBeep(freq, type, duration) { if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration); }
     function fireConfetti() { const c = document.getElementById('confetti-canvas'); const ctx = c.getContext('2d'); c.width = window.innerWidth; c.height = window.innerHeight; let p = []; const colors = ['#f1c40f', '#e74c3c', '#3498db', '#9b59b6', '#2ecc71']; for(let i=0; i<150; i++) p.push({x: c.width/2, y: c.height/2, r: Math.random()*6+2, dx: Math.random()*10-5, dy: Math.random()*10-5, color: colors[Math.floor(Math.random()*colors.length)], life: 100}); function d() { ctx.clearRect(0,0,c.width,c.height); let active = false; p.forEach(k => { if(k.life>0){ active=true; ctx.beginPath(); ctx.arc(k.x, k.y, k.r, 0, Math.PI*2); ctx.fillStyle=k.color; ctx.fill(); k.x+=k.dx; k.y+=k.dy; k.dy+=0.2; k.life--; }}); if(active) requestAnimationFrame(d); else ctx.clearRect(0,0,c.width,c.height); } d(); }
 
-    // --- 全域函式 ---
+    // --- 核心操作 (使用 data 指標) ---
     window.switchTab = function(id) {
         document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -454,19 +583,18 @@
         if(id==='tab-gacha') buttons[0].classList.add('active');
         if(id==='tab-bag') buttons[1].classList.add('active');
         if(id==='tab-bank') buttons[2].classList.add('active');
-        if(id==='tab-admin') { buttons[3].classList.add('active'); renderPrizeManager(); }
+        if(id==='tab-admin') { buttons[3].classList.add('active'); renderPrizeManager(); renderChildrenList(); }
     };
 
     window.startGacha = function() {
-        if (!data.tiers) data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS));
         if (data.score < COST) return;
         initAudio(); data.score -= COST; recordHistory('參加抽獎', -COST);
         let resultTier = null;
-        if (data.pityLegendary >= 99) resultTier = data.tiers[5];
-        else if (data.pityRare >= 9) resultTier = data.tiers[2];
-        else { const rand = Math.random() * 100; let cumulative = 0; resultTier = data.tiers[0]; for (let t of data.tiers) { cumulative += t.chance; if (rand <= cumulative) { resultTier = t; break; } } }
+        if (data.pityLegendary >= 99) resultTier = masterData.tiers[5];
+        else if (data.pityRare >= 9) resultTier = masterData.tiers[2];
+        else { const rand = Math.random() * 100; let cumulative = 0; resultTier = masterData.tiers[0]; for (let t of masterData.tiers) { cumulative += t.chance; if (rand <= cumulative) { resultTier = t; break; } } }
         if (resultTier.index === 5) { data.pityLegendary = 0; data.pityRare = 0; } else if (resultTier.index >= 2) { data.pityRare = 0; data.pityLegendary++; } else { data.pityRare++; data.pityLegendary++; }
-        saveDataToCloud();
+        saveData();
         const btnDraw = document.getElementById('btnDraw'); const finalResult = document.getElementById('finalResult'); btnDraw.disabled = true; finalResult.innerHTML = '<span style="color:#999; font-size:1.5rem">🎰 轉動中...</span>';
         let currentIdx = 0; const totalLoops = 5; const boxes = document.querySelectorAll('.roulette-box'); let speed = 40; let stepCount = 0; let totalSteps = (totalLoops * 6) + resultTier.index;
         function step() {
@@ -476,7 +604,7 @@
                 let finalReward = "銘謝惠顧"; if (resultTier.rewards && resultTier.rewards.length > 0) finalReward = resultTier.rewards[Math.floor(Math.random() * resultTier.rewards.length)];
                 finalResult.innerHTML = `<h2 style="color:${resultTier.color}">${resultTier.name}級獎勵！</h2><p style="font-weight:bold; font-size:1.3rem; color:#333;">${finalReward}</p>`;
                 data.bag.unshift({ tierName: resultTier.name, color: resultTier.color, reward: finalReward, id: Date.now() });
-                saveDataToCloud(); btnDraw.disabled = false; updateUI(); if (resultTier.index >= 2) fireConfetti(); return;
+                saveData(); btnDraw.disabled = false; updateUI(); if (resultTier.index >= 2) fireConfetti(); return;
             }
             stepCount++; currentIdx++; if (currentIdx >= 6) currentIdx = 0; let remainingSteps = totalSteps - stepCount; if (remainingSteps < 8) speed += (10 - remainingSteps) * 20; else if (speed > 40) speed = 40; setTimeout(step, speed);
         } step();
@@ -486,13 +614,13 @@
         const item = data.bag[idx]; if(!confirm(`確定使用「${item.reward}」嗎？`)) return;
         const match = item.reward.match(/增加點數(\d+)點/);
         if (match) { const p = parseInt(match[1]); data.score += p; recordHistory(`使用點數卡: ${item.reward}`, p); alert(`🎊 已增加 ${p} 點！`); } else { recordHistory(`使用: ${item.reward}`, 0); }
-        data.bag.splice(idx, 1); saveDataToCloud();
+        data.bag.splice(idx, 1); saveData();
     };
 
     window.addPoints = function() {
         const r = document.getElementById('reasonIn').value; const p = parseInt(document.getElementById('pointsIn').value);
         if (!r || !p) return alert('請輸入完整資訊');
-        data.score += p; recordHistory(r, p); saveDataToCloud(); alert(`已發放 ${p} 點`); document.getElementById('reasonIn').value = '';
+        data.score += p; recordHistory(r, p); saveData(); alert(`已發放 ${p} 點`); document.getElementById('reasonIn').value = '';
     };
 
     window.createDeposit = function() {
@@ -502,35 +630,36 @@
         if(!confirm(`確定要將 ${amount} 點存入定存嗎？\n\n📅 鎖定 ${FIXED_DEPOSIT_DAYS} 天\n📈 預計獲利 +${estimatedProfit} 點\n💰 到期可領 ${totalReturn} 點\n\n期間內無法取出喔！`)) return;
         data.score -= amount; const now = new Date(); const endDate = new Date(now); endDate.setDate(endDate.getDate() + FIXED_DEPOSIT_DAYS);
         data.deposits.push({ id: Date.now(), amount: amount, startDate: now.toISOString(), endDate: endDate.toISOString(), status: 'active' });
-        recordHistory(`🏦 申請定存`, -amount); saveDataToCloud(); alert("定存申請成功！"); document.getElementById('depositAmount').value = "";
+        recordHistory(`🏦 申請定存`, -amount); saveData(); alert("定存申請成功！"); document.getElementById('depositAmount').value = "";
     };
 
     window.redeemDeposit = function(id) {
         const idx = data.deposits.findIndex(d => d.id === id); if (idx === -1) return;
         const deposit = data.deposits[idx]; const principal = deposit.amount; const interest = Math.floor(principal * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS); const total = principal + interest;
-        data.score += total; recordHistory(`💰 定存到期領回`, total); data.deposits.splice(idx, 1); saveDataToCloud();
+        data.score += total; recordHistory(`💰 定存到期領回`, total); data.deposits.splice(idx, 1); saveData();
         alert(`恭喜！定存到期！\n本金：${principal}\n利息：${interest}\n總共獲得：${total} 點！`);
     };
 
     window.resetAll = function() {
-        if(confirm('⚠️ 警告：這將會清除雲端上的所有資料！確定嗎？')) {
-            data = { score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)) };
-            saveDataToCloud();
+        if(confirm('⚠️ 警告：這將會清除所有資料！確定嗎？')) {
+            masterData.children = [{ name: "寶貝1", data: createNewChildData() }];
+            masterData.currentIdx = 0;
+            saveData();
+            switchChild(0);
         }
     };
 
     window.renderPrizeManager = function() {
-        const select = document.getElementById('tierSelect'); const listDiv = document.getElementById('prizeManagerList'); const selectedIndex = parseInt(select.value); const tierData = data.tiers[selectedIndex];
+        const select = document.getElementById('tierSelect'); const listDiv = document.getElementById('prizeManagerList'); const selectedIndex = parseInt(select.value); const tierData = masterData.tiers[selectedIndex];
         select.style.borderColor = tierData.color; select.style.color = tierData.color; let html = '';
         if (tierData.rewards.length === 0) { html = '<div style="padding:10px; text-align:center; color:#999;">此等級目前沒有獎品</div>'; } else { tierData.rewards.forEach((reward, idx) => { html += `<div class="prize-manage-item"><span>${reward}</span><div><button class="btn-mini-edit" onclick="editPrize(${selectedIndex}, ${idx})">✏️</button><button class="btn-mini-del" onclick="removePrize(${selectedIndex}, ${idx})">🗑️</button></div></div>`; }); }
         listDiv.innerHTML = html;
     };
-    window.addCustomPrize = function() { const select = document.getElementById('tierSelect'); const input = document.getElementById('newPrizeName'); const name = input.value.trim(); const tierIdx = parseInt(select.value); if (!name) return alert("請輸入獎品名稱"); data.tiers[tierIdx].rewards.push(name); saveDataToCloud(); input.value = ''; renderPrizeManager(); };
-    window.removePrize = function(tierIdx, rewardIdx) { if(!confirm(`確定要刪除「${data.tiers[tierIdx].rewards[rewardIdx]}」嗎？`)) return; data.tiers[tierIdx].rewards.splice(rewardIdx, 1); saveDataToCloud(); renderPrizeManager(); };
-    window.editPrize = function(tierIdx, rewardIdx) { const oldName = data.tiers[tierIdx].rewards[rewardIdx]; const newName = prompt("修改獎品名稱：", oldName); if (newName && newName.trim() !== "") { data.tiers[tierIdx].rewards[rewardIdx] = newName.trim(); saveDataToCloud(); renderPrizeManager(); } };
-    window.restoreDefaultPrizes = function() { if(confirm("⚠️ 確定要恢復成「預設獎品」嗎？")) { data.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS)); saveDataToCloud(); renderPrizeManager(); alert("已恢復預設值。"); } };
+    window.addCustomPrize = function() { const select = document.getElementById('tierSelect'); const input = document.getElementById('newPrizeName'); const name = input.value.trim(); const tierIdx = parseInt(select.value); if (!name) return alert("請輸入獎品名稱"); masterData.tiers[tierIdx].rewards.push(name); saveData(); input.value = ''; renderPrizeManager(); };
+    window.removePrize = function(tierIdx, rewardIdx) { if(!confirm(`確定要刪除「${masterData.tiers[tierIdx].rewards[rewardIdx]}」嗎？`)) return; masterData.tiers[tierIdx].rewards.splice(rewardIdx, 1); saveData(); renderPrizeManager(); };
+    window.editPrize = function(tierIdx, rewardIdx) { const oldName = masterData.tiers[tierIdx].rewards[rewardIdx]; const newName = prompt("修改獎品名稱：", oldName); if (newName && newName.trim() !== "") { masterData.tiers[tierIdx].rewards[rewardIdx] = newName.trim(); saveData(); renderPrizeManager(); } };
+    window.restoreDefaultPrizes = function() { if(confirm("⚠️ 確定要恢復成「預設獎品」嗎？")) { masterData.tiers = JSON.parse(JSON.stringify(DEFAULT_TIERS)); saveData(); renderPrizeManager(); alert("已恢復預設值。"); } };
 
-    // === 定時更新 (已修改：顯示天/時/分) ===
     window.updateTimerAndDeposits = function() {
         const now = new Date();
         let target = new Date(now); target.setHours(INTEREST_HOUR, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1);
@@ -551,7 +680,7 @@
                 const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                timeStr = `⏳ 鎖定中 (剩 ${days}天 ${hours}時 ${mins}分)`;
+                timeStr = `⏳ 剩餘 ${days}天 ${hours}時 ${mins}分`;
             }
             const profit = Math.floor(d.amount * FIXED_DEPOSIT_DAILY_RATE * FIXED_DEPOSIT_DAYS);
             html += `<div class="deposit-item"><div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894; font-size:0.9rem;">(預期+${profit})</span></div><div class="deposit-time">${timeStr}</div><button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature ? '' : 'disabled'}>${isMature ? '💰 立即領取' : '未到期'}</button></div>`;
@@ -564,9 +693,9 @@
         if (currentHour < INTEREST_HOUR) return;
         if (data.lastLoginDate !== todayStr && data.score > 0) {
             const interest = Math.floor(data.score * DAILY_INTEREST_RATE);
-            if (interest > 0) { data.score += interest; recordHistory(`💰 夜間活存結算 (4%)`, interest); alert(`🌙 晚上好！\n銀行利息已入帳：+${interest} 點！`); }
-            data.lastLoginDate = todayStr; saveDataToCloud();
-        } else if (data.lastLoginDate === "") { data.lastLoginDate = todayStr; saveDataToCloud(); }
+            if (interest > 0) { data.score += interest; recordHistory(`💰 夜間活存結算 (4%)`, interest); alert(`🌙 晚上好！${masterData.children[masterData.currentIdx].name}\n銀行利息已入帳：+${interest} 點！`); }
+            data.lastLoginDate = todayStr; saveData();
+        } else if (data.lastLoginDate === "") { data.lastLoginDate = todayStr; saveData(); }
     }
     function updateUI() {
         document.getElementById('scoreDisplay').innerText = data.score;
@@ -589,8 +718,8 @@
         window.updateTimerAndDeposits();
     }
     function recordHistory(r, a) { const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; data.history.push({ date: d, reason: r, amount: a }); }
-    window.exportData = function() { const json = JSON.stringify(data); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type: "application/json"})); a.download = `reward_backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-    window.importData = function(input) { const file = input.files[0]; if (!file || !confirm("⚠️ 警告：匯入新檔案將會「覆蓋」目前的雲端紀錄！\n確定要繼續嗎？")) return; const reader = new FileReader(); reader.onload = function(e) { try { const imported = JSON.parse(e.target.result); if (imported.score !== undefined) { data = { ...data, ...imported }; saveDataToCloud(); alert("✅ 資料還原成功，並已同步至雲端！"); } } catch(err) { alert("❌ 格式錯誤"); } }; reader.readAsText(file); input.value = ''; }
+    window.exportData = function() { const json = JSON.stringify(masterData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type: "application/json"})); a.download = `reward_backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+    window.importData = function(input) { const file = input.files[0]; if (!file || !confirm("⚠️ 警告：匯入新檔案將會「覆蓋」目前的雲端紀錄！\n確定要繼續嗎？")) return; const reader = new FileReader(); reader.onload = function(e) { try { const imported = JSON.parse(e.target.result); if (imported.children) { masterData = imported; } else { masterData.children = [{name:"寶貝1", data:imported}]; masterData.currentIdx=0; if(imported.tiers) masterData.tiers=imported.tiers; } saveData(); alert("✅ 資料還原成功！"); switchChild(0); } catch(err) { alert("❌ 格式錯誤"); } }; reader.readAsText(file); input.value = ''; }
 </script>
 </body>
 </html>

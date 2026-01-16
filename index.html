@@ -310,6 +310,12 @@
                 <button class="btn-admin" style="background:#636e72;" onclick="triggerResetPassword()">📧 發送重設密碼信</button>
             </div>
         </div>
+        
+        <div class="settings-group">
+            <h4>📬 關於與回饋</h4>
+            <p style="font-size:0.9rem; color:#666;">有任何問題或建議嗎？可以直接寫信給作者喔！</p>
+            <button class="btn-admin" style="background:#00cec9;" onclick="writeToAuthor()">✍️ 寫信給作者</button>
+        </div>
 
         <button class="btn-admin" onclick="saveSettings()">💾 儲存所有設定並返回</button>
     </div>
@@ -396,10 +402,11 @@
 
 <div id="tab-admin" class="section">
     <div class="admin-box">
-        <h3>💰 發放點數</h3>
-        <input type="text" id="reasonIn" class="admin-input" placeholder="原因">
+        <h3>💰 發放/扣除 點數</h3>
+        <input type="text" id="reasonIn" class="admin-input" placeholder="原因 (例如：幫忙家事)">
         <input type="number" id="pointsIn" class="admin-input" placeholder="點數">
-        <button class="btn-admin" onclick="addPoints()">發放</button>
+        <p style="font-size:0.8rem; color:#666; margin-top:5px; margin-bottom:10px;">(輸入負值如 -50 即可扣除點數)</p>
+        <button class="btn-admin" onclick="addPoints()">執行</button>
     </div>
 
     <button class="btn-settings" onclick="openSettings()">⚙️ 進入詳細設定 (密碼/機率/管理)</button>
@@ -427,7 +434,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // SweetAlert Mixin for small toasts
     const Toast = Swal.mixin({
@@ -964,6 +971,35 @@
         });
     };
 
+    window.writeToAuthor = async function() {
+        const { value: text } = await Swal.fire({
+            input: 'textarea',
+            inputLabel: '寫信給作者',
+            inputPlaceholder: '請輸入您的建議、遇到的問題，或想說的話...',
+            inputAttributes: {
+                'aria-label': '請輸入您的建議'
+            },
+            showCancelButton: true,
+            confirmButtonText: '發送 📨',
+            cancelButtonText: '取消'
+        });
+
+        if (text) {
+            try {
+                const sender = currentUser ? (currentUser.email || "Guest") : "Unknown";
+                await addDoc(collection(db, "messages"), {
+                    content: text,
+                    sender: sender,
+                    timestamp: new Date().toISOString(),
+                    read: false
+                });
+                Swal.fire('已發送', '感謝您的回饋！', 'success');
+            } catch (e) {
+                Swal.fire('發送失敗', e.message, 'error');
+            }
+        }
+    }
+
     window.startGacha = function() {
         const cost = masterData.settings.gachaCost;
         if (data.score < cost) return;
@@ -1091,7 +1127,7 @@
         data.score += p; 
         data.history.push({ date: new Date().toLocaleDateString(), reason: r, amount: p });
         saveData(); 
-        Toast.fire({ icon: 'success', title: '點數已發放' });
+        Toast.fire({ icon: 'success', title: p >= 0 ? '點數已發放' : '點數已扣除' });
         document.getElementById('reasonIn').value = '';
     };
 
@@ -1292,9 +1328,6 @@
             input.value = ''; 
         });
     }
-
-    // PWA Service Worker Registration
-    // [已刪除 PWA 註冊碼]
 </script>
 </body>
 </html>

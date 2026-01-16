@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 作者推廣版</title>
+    <title>超級幸運抽抽樂 - v26 資料回寫版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -570,15 +570,25 @@
         catch (e) { alert("讀取失敗"); }
     }
     function loadDataFromLocal() {
-        const s = localStorage.getItem('kidGacha_v25'); initMasterData(s ? JSON.parse(s) : null);
+        // v26 版本：自動讀取舊版資料
+        let s = localStorage.getItem('kidGacha_v26');
+        if(!s) s = localStorage.getItem('kidGacha_v25'); // 相容 v25
+        initMasterData(s ? JSON.parse(s) : null);
     }
     function saveData() {
         // 強制數值修正 (避免浮點數誤差)
         masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
         
-        if (isGuest) { localStorage.setItem('kidGacha_v25', JSON.stringify(masterData)); updateUI(); }
-        else if (currentUser) { setDoc(userRef, masterData).then(()=>updateUI()); }
+        if (isGuest) { 
+            localStorage.setItem('kidGacha_v26', JSON.stringify(masterData)); 
+            updateUI(); 
+        }
+        else if (currentUser) { 
+            // 🆕 v26 核心修正：將 Email 寫入資料庫，供 Admin 讀取
+            masterData.email = currentUser.email;
+            setDoc(userRef, masterData).then(()=>updateUI()); 
+        }
     }
 
     // === UI & 邏輯 ===

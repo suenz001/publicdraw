@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - v26 資料回寫版</title>
+    <title>超級幸運抽抽樂 - 手機優化版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -17,6 +17,9 @@
             --common: #95a5a6; --uncommon: #00b894; --rare: #0984e3;
             --epic: #6c5ce7; --legendary: #e17055; --mythic: #d63031;
         }
+
+        /* 全域設定：避免寬度計算溢出 */
+        * { box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -42,7 +45,7 @@
         .login-input {
             width: 100%; padding: 12px; margin: 8px 0;
             border: 1px solid #ccc; border-radius: 8px;
-            box-sizing: border-box; font-size: 1rem;
+            font-size: 1rem;
         }
         .btn-group-login { display: flex; gap: 10px; margin-top: 15px; }
         .btn-login { flex: 1; background: #4a90e2; color: white; border: none; padding: 12px; font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
@@ -99,7 +102,7 @@
         .bank-timer { font-family: monospace; font-size: 1.1rem; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; margin-top: 10px; display: inline-block; font-weight: bold;}
         
         .deposit-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .deposit-input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; font-size: 1.2rem; box-sizing: border-box; text-align: center; }
+        .deposit-input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; font-size: 1.2rem; text-align: center; }
         .btn-deposit { width: 100%; padding: 12px; background: #00b894; color: white; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
         .deposit-item { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; overflow: hidden; }
         .deposit-item::before { content: "🔒"; position: absolute; right: -10px; top: -10px; font-size: 3rem; opacity: 0.1; }
@@ -109,7 +112,7 @@
         .btn-redeem:disabled { background: #dfe6e9; color: #b2bec3; cursor: not-allowed; }
         
         .admin-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; }
         .btn-admin { background: #0984e3; color: white; padding: 10px; width: 100%; border: none; border-radius: 5px; cursor: pointer; }
         .btn-settings { background: #636e72; color: white; padding: 12px; width: 100%; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1.1rem; margin-top:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
@@ -120,19 +123,34 @@
         .btn-backup { background: #6c5ce7; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
         .btn-restore { background: #e17055; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
 
-        /* 新增：外部連結按鈕樣式 */
         .btn-external-game { display: inline-block; background-color: #636e72; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.1s; }
         .btn-external-game:active { transform: scale(0.95); }
 
-        /* Settings Modal */
-        #settingsModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; display: none; overflow-y: auto; }
-        .settings-content { background: #fff; margin: 20px auto; padding: 25px; width: 90%; max-width: 500px; border-radius: 15px; position: relative; }
+        /* Settings Modal (iOS Scroll Fixes) */
+        #settingsModal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 200; display: none; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* iOS 慣性捲動 */
+        }
+        .settings-content { 
+            background: #fff; margin: 20px auto; padding: 25px; 
+            width: 90%; max-width: 500px; border-radius: 15px; position: relative;
+            /* 🔴 關鍵修正：防止寬度溢出 */
+            box-sizing: border-box; 
+        }
         .settings-group { margin-bottom: 25px; border-bottom: 2px dashed #eee; padding-bottom: 20px; }
         .settings-group h4 { margin-top: 0; color: #2d3436; margin-bottom: 15px; border-left: 4px solid #4a90e2; padding-left: 10px; }
         .settings-label { font-size: 0.9rem; color: #666; margin-bottom: 5px; display: block; font-weight: bold; }
         .close-settings { position: absolute; top: 15px; right: 20px; font-size: 2rem; cursor: pointer; color: #999; line-height: 20px; }
         .radio-group { display: flex; gap: 15px; margin-bottom: 10px; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        
+        /* 🔴 關鍵修正：內層列表捲動優化 */
+        #prizeManagerList {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
 
         /* PIN Modal */
         #pinModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 300; display: none; flex-direction: column; justify-content: center; align-items: center; }
@@ -571,8 +589,9 @@
     }
     function loadDataFromLocal() {
         // v26 版本：自動讀取舊版資料
-        let s = localStorage.getItem('kidGacha_v26');
-        if(!s) s = localStorage.getItem('kidGacha_v25'); // 相容 v25
+        let s = localStorage.getItem('kidGacha_v27');
+        if(!s) s = localStorage.getItem('kidGacha_v26');
+        if(!s) s = localStorage.getItem('kidGacha_v25'); 
         initMasterData(s ? JSON.parse(s) : null);
     }
     function saveData() {
@@ -581,7 +600,7 @@
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
         
         if (isGuest) { 
-            localStorage.setItem('kidGacha_v26', JSON.stringify(masterData)); 
+            localStorage.setItem('kidGacha_v27', JSON.stringify(masterData)); 
             updateUI(); 
         }
         else if (currentUser) { 

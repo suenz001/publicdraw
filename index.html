@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 時間自訂版</title>
+    <title>超級幸運抽抽樂 - 完美防護版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -163,7 +163,7 @@
 </div>
 
 <div id="pinModal">
-    <h3 style="color:#2d3436;">請輸入家長密碼</h3>
+    <h3 id="pinTitle" style="color:#2d3436;">請輸入家長密碼</h3>
     <div id="pinDisplay" class="pin-display"></div>
     <div class="pin-grid">
         <div class="pin-btn" onclick="enterPin(1)">1</div>
@@ -265,8 +265,8 @@
             
             <label class="settings-label">家長密碼鎖 (PIN)</label>
             <div style="display:flex; gap:5px;">
-                <input type="password" id="adminPinInput" class="admin-input" placeholder="設定4位數密碼 (留空則關閉)" maxlength="4" style="margin:0;">
-                <button class="btn-admin" style="width:80px;" onclick="savePin()">設定</button>
+                <button class="btn-admin" style="width:120px;" onclick="startSetPin()">設定/修改密碼</button>
+                <button class="btn-admin" style="width:120px; background:#b2bec3;" onclick="removePin()">清除密碼</button>
             </div>
             <p style="font-size:0.8rem; color:#888;">設定後，進入家長區需輸入密碼。</p>
 
@@ -560,14 +560,14 @@
         catch (e) { alert("讀取失敗"); }
     }
     function loadDataFromLocal() {
-        const s = localStorage.getItem('kidGacha_v22'); initMasterData(s ? JSON.parse(s) : null);
+        const s = localStorage.getItem('kidGacha_v23'); initMasterData(s ? JSON.parse(s) : null);
     }
     function saveData() {
         // 強制數值修正 (避免浮點數誤差)
         masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
         
-        if (isGuest) { localStorage.setItem('kidGacha_v22', JSON.stringify(masterData)); updateUI(); }
+        if (isGuest) { localStorage.setItem('kidGacha_v23', JSON.stringify(masterData)); updateUI(); }
         else if (currentUser) { setDoc(userRef, masterData).then(()=>updateUI()); }
     }
 
@@ -590,9 +590,12 @@
 
     // === PIN 碼與設定 ===
     let currentPinInput = "";
+    let pinContext = 'login'; // 'login' (解鎖) or 'setup' (設定)
     
     window.switchTab = function(id) {
         if(id === 'tab-admin' && masterData.settings.adminPin) {
+            pinContext = 'login';
+            document.getElementById('pinTitle').innerText = "請輸入家長密碼";
             document.getElementById('pinModal').style.display = 'flex';
             currentPinInput = "";
             updatePinDisplay();
@@ -612,18 +615,43 @@
         if(id==='tab-admin') buttons[3].classList.add('active');
     }
 
+    // 設定密碼功能
+    window.startSetPin = function() {
+        pinContext = 'setup';
+        currentPinInput = "";
+        document.getElementById('pinTitle').innerText = "請設定新密碼 (4位數字)";
+        document.getElementById('pinModal').style.display = 'flex';
+        updatePinDisplay();
+    }
+
+    window.removePin = function() {
+        if(confirm("確定要移除密碼保護嗎？")) {
+            masterData.settings.adminPin = null;
+            saveData();
+            alert("已移除密碼");
+        }
+    }
+
     window.enterPin = function(num) {
         if(currentPinInput.length < 4) {
             currentPinInput += num;
             updatePinDisplay();
             if(currentPinInput.length === 4) {
-                if(currentPinInput === masterData.settings.adminPin) {
+                // 檢查模式
+                if (pinContext === 'login') {
+                    if(currentPinInput === masterData.settings.adminPin) {
+                        closePin();
+                        performSwitchTab('tab-admin');
+                    } else {
+                        alert("密碼錯誤");
+                        currentPinInput = "";
+                        updatePinDisplay();
+                    }
+                } else if (pinContext === 'setup') {
+                    masterData.settings.adminPin = currentPinInput;
+                    saveData();
+                    alert("密碼已設定！");
                     closePin();
-                    performSwitchTab('tab-admin');
-                } else {
-                    alert("密碼錯誤");
-                    currentPinInput = "";
-                    updatePinDisplay();
                 }
             }
         }
@@ -642,7 +670,7 @@
         document.getElementById('setPityRare').value = masterData.settings.pityRareThreshold;
         document.getElementById('setPityLeg').value = masterData.settings.pityLegendaryThreshold;
         document.getElementById('setPityTarget').value = masterData.settings.pityBigTarget || 5;
-        document.getElementById('adminPinInput').value = masterData.settings.adminPin || "";
+        // document.getElementById('adminPinInput').value = masterData.settings.adminPin || ""; // 移除 Input 顯示
         
         // 獎品範圍
         const scope = masterData.settings.prizeScope || 'global';
@@ -686,14 +714,6 @@
             return data.tiers;
         }
         return masterData.tiers;
-    }
-
-    window.savePin = function() {
-        const pin = document.getElementById('adminPinInput').value;
-        if(pin.length > 0 && pin.length !== 4) return alert("密碼必須是 4 位數");
-        masterData.settings.adminPin = pin.length === 4 ? pin : null;
-        saveData();
-        alert("密碼已設定 (留空則為取消)");
     }
 
     window.saveSettings = function() {
@@ -996,6 +1016,10 @@
         let html = '';
         data.deposits.forEach(d => {
             const end = new Date(d.endDate); const isMature = now >= end; const timeLeft = end - now;
+            
+            // 顯示存入時間
+            const startStr = new Date(d.startDate).toLocaleString();
+
             let timeStr = "";
             if (isMature) timeStr = "✅ 可領回";
             else {
@@ -1005,7 +1029,12 @@
                 timeStr = `⏳ 剩 ${days}天${hours}時${mins}分`;
             }
             const profit = Math.floor(d.amount * masterData.settings.fixedDepositRate * masterData.settings.fixedDepositDays);
-            html += `<div class="deposit-item"><div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894;">(+${profit})</span></div><div class="deposit-time">${timeStr}</div><button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature?'':'disabled'}>${isMature?'領取':'未到期'}</button></div>`;
+            html += `<div class="deposit-item">
+                        <div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894;">(+${profit})</span></div>
+                        <div style="font-size:0.75rem; color:#aaa; margin-top:2px;">📅 ${startStr}</div>
+                        <div class="deposit-time">${timeStr}</div>
+                        <button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature?'':'disabled'}>${isMature?'領取':'未到期'}</button>
+                     </div>`;
         });
         list.innerHTML = html;
     };

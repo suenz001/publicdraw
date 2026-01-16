@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 資料保全版</title>
+    <title>超級幸運抽抽樂 - 作者推廣版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -119,6 +119,10 @@
         
         .btn-backup { background: #6c5ce7; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
         .btn-restore { background: #e17055; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 48%; }
+
+        /* 新增：外部連結按鈕樣式 */
+        .btn-external-game { display: inline-block; background-color: #636e72; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        .btn-external-game:active { transform: scale(0.95); }
 
         /* Settings Modal */
         #settingsModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; display: none; overflow-y: auto; }
@@ -334,6 +338,12 @@
     <h3 style="border-left: 4px solid var(--rare); padding-left: 10px; color:#333;">🎒 我的獎品</h3>
     <div id="bagList"></div>
     <div id="bagEmpty" style="text-align:center; color:#999; padding:20px;">背包空空的</div>
+    
+    <div style="text-align:center; margin-top: 30px; border-top: 1px dashed #ddd; padding-top: 20px;">
+        <a href="https://suenz001.github.io/history-card-game/" target="_blank" class="btn-external-game">
+            🎮 作者測試中網頁遊戲
+        </a>
+    </div>
 </div>
 
 <div id="tab-bank" class="section">
@@ -560,14 +570,14 @@
         catch (e) { alert("讀取失敗"); }
     }
     function loadDataFromLocal() {
-        const s = localStorage.getItem('kidGacha_v24'); initMasterData(s ? JSON.parse(s) : null);
+        const s = localStorage.getItem('kidGacha_v25'); initMasterData(s ? JSON.parse(s) : null);
     }
     function saveData() {
         // 強制數值修正 (避免浮點數誤差)
         masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
         
-        if (isGuest) { localStorage.setItem('kidGacha_v24', JSON.stringify(masterData)); updateUI(); }
+        if (isGuest) { localStorage.setItem('kidGacha_v25', JSON.stringify(masterData)); updateUI(); }
         else if (currentUser) { setDoc(userRef, masterData).then(()=>updateUI()); }
     }
 

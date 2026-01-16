@@ -2,8 +2,12 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - v29 成本自訂版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>超級幸運抽抽樂</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-material-ui/material-ui.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -18,15 +22,15 @@
             --epic: #6c5ce7; --legendary: #e17055; --mythic: #d63031;
         }
 
-        /* 全域設定：避免寬度計算溢出 */
-        * { box-sizing: border-box; }
+        /* 全域設定 */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg-color); color: var(--text-color);
             margin: 0; padding: 0;
             user-select: none; -webkit-user-select: none;
-            overflow-x: hidden; padding-bottom: 60px;
+            overflow-x: hidden; padding-bottom: 20px;
         }
 
         /* === 登入介面 === */
@@ -55,7 +59,7 @@
         #loadingMsg { color: #888; margin-top: 10px; font-size: 0.9rem; display: none; }
         #loginError { color: red; font-size: 0.8rem; margin-top: 10px; min-height: 1.2em; }
 
-        .user-bar { background: #2d3436; color: white; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .user-bar { background: #2d3436; color: white; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding-top: max(8px, env(safe-area-inset-top)); }
         .btn-logout { background: #d63031; border: none; color: white; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
 
         /* === Header & Dropdown === */
@@ -77,7 +81,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         .roulette-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .roulette-box { background: #e9ecef; border-radius: 12px; padding: 20px 5px; text-align: center; font-weight: 800; font-size: 1.2rem; opacity: 0.6; color: #555; border: 3px solid transparent; border-bottom-width: 5px; display: flex; flex-direction: column; justify-content: center; min-height: 80px; }
+        .roulette-box { background: #e9ecef; border-radius: 12px; padding: 20px 5px; text-align: center; font-weight: 800; font-size: 1.2rem; opacity: 0.6; color: #555; border: 3px solid transparent; border-bottom-width: 5px; display: flex; flex-direction: column; justify-content: center; min-height: 80px; transition: transform 0.1s; }
         .roulette-box span { font-size: 0.8rem; font-weight: normal; margin-top: 5px; opacity: 0.8; }
         .roulette-box.active { opacity: 1; transform: scale(1.05); background: #fff; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 10; }
         
@@ -88,7 +92,8 @@
         .box-legendary { border-color: var(--legendary); } .box-legendary.active { color: var(--legendary); }
         .box-mythic { border-color: var(--mythic); } .box-mythic.active { color: var(--mythic); }
 
-        .big-btn { width: 100%; padding: 18px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; border: none; background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); color: white; box-shadow: 0 4px 10px rgba(9, 132, 227, 0.4); cursor: pointer; margin-top: 15px; }
+        .big-btn { width: 100%; padding: 18px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; border: none; background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); color: white; box-shadow: 0 4px 10px rgba(9, 132, 227, 0.4); cursor: pointer; margin-top: 15px; transition: transform 0.1s; }
+        .big-btn:active { transform: scale(0.98); }
         .big-btn:disabled { background: #b2bec3; box-shadow: none; cursor: not-allowed; }
         #finalResult { margin-top: 25px; padding: 20px; border-radius: 15px; text-align: center; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
         
@@ -126,7 +131,7 @@
         .btn-external-game { display: inline-block; background-color: #636e72; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.1s; }
         .btn-external-game:active { transform: scale(0.95); }
 
-        /* Settings Modal (iOS Scroll Fixes) */
+        /* Settings Modal */
         #settingsModal { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.8); z-index: 200; display: none; 
@@ -145,10 +150,7 @@
         .radio-group { display: flex; gap: 15px; margin-bottom: 10px; }
         .radio-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
         
-        #prizeManagerList {
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
-        }
+        #prizeManagerList { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 
         /* PIN Modal */
         #pinModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 300; display: none; flex-direction: column; justify-content: center; align-items: center; }
@@ -427,7 +429,15 @@
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // === 您的 Firebase 設定 ===
+    // SweetAlert Mixin for small toasts
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+
     const firebaseConfig = {
       apiKey: "AIzaSyCArCzhRG6H-07Ooet34ikyP3w9xVq6t1U",
       authDomain: "kidrewardapp.firebaseapp.com",
@@ -472,42 +482,57 @@
         else if (msg === 'auth/weak-password') msg = "密碼太弱 (至少需6位)";
         else if (msg === 'auth/missing-password') msg = "請輸入密碼";
         errorMsg.innerText = msg;
+        Swal.fire({ icon: 'error', title: '登入失敗', text: msg });
     }
 
     btnLogin.addEventListener('click', () => {
         const email = emailInput.value; const password = passwordInput.value;
         if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        signInWithEmailAndPassword(auth, email, password).catch((error) => { handleAuthError(error); });
+        signInWithEmailAndPassword(auth, email, password).then(()=>{
+            Toast.fire({ icon: 'success', title: '登入成功' });
+        }).catch((error) => { handleAuthError(error); });
     });
 
     btnRegister.addEventListener('click', () => {
         const email = emailInput.value; const password = passwordInput.value;
         if(!email || !password) { errorMsg.innerText="請輸入帳號密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        createUserWithEmailAndPassword(auth, email, password).then(() => { alert("註冊成功！已為您登入"); }).catch((error) => { handleAuthError(error); });
+        createUserWithEmailAndPassword(auth, email, password).then(() => { 
+            Swal.fire('註冊成功！', '已為您自動登入', 'success'); 
+        }).catch((error) => { handleAuthError(error); });
     });
 
     btnForgotPassword.addEventListener('click', () => {
         const email = emailInput.value;
         if(!email) { errorMsg.innerText = "請輸入 Email 後再按忘記密碼"; return; }
         loadingMsg.style.display = 'block'; errorMsg.innerText = "";
-        sendPasswordResetEmail(auth, email).then(() => { loadingMsg.style.display = 'none'; alert("重設信已寄出！"); }).catch((error) => { handleAuthError(error); });
+        sendPasswordResetEmail(auth, email).then(() => { 
+            loadingMsg.style.display = 'none'; 
+            Swal.fire('重設信已寄出！', '請檢查您的信箱', 'success');
+        }).catch((error) => { handleAuthError(error); });
     });
 
-    // 🔴 遊客按鈕：觸發匿名登入 (Firebase Anonymous Auth)
     btnGuest.addEventListener('click', () => {
         loadingMsg.style.display = 'block';
         signInAnonymously(auth).catch((error) => {
             handleAuthError(error);
-            alert("請確認 Firebase 後台已開啟 [Anonymous] 登入功能！");
+            Swal.fire('注意', '請確認 Firebase 後台已開啟 [Anonymous] 登入功能！', 'warning');
         });
     });
 
     btnLogout.addEventListener('click', () => {
-        if(confirm("確定要登出嗎？")) { 
-            signOut(auth).then(() => { location.reload(); }); 
-        }
+        Swal.fire({
+            title: '確定要登出嗎？',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '登出',
+            cancelButtonText: '取消'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                signOut(auth).then(() => { location.reload(); });
+            }
+        });
     });
 
     onAuthStateChanged(auth, async (user) => {
@@ -532,9 +557,6 @@
         }
     });
 
-    // === 核心資料結構 ===
-    // 🔴 COST 已移除，改用 masterData.settings.gachaCost
-
     const DEFAULT_TIERS = [
         { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
         { id: 'uncommon', index: 1, name: '罕見', color: '#00b894', chance: 20, rewards: ['小日記減少二行', '假日玩電動加10分鐘', '假日爸爸陪玩電動10分鐘', '減少看書時間10分鐘'] },
@@ -544,18 +566,12 @@
         { id: 'mythic', index: 5, name: '神話', color: '#d63031', chance: 1, rewards: ['平日可玩電動30分鐘', '可任意選購500元內的小禮物', '打手心處罰減免一次', '增加點數500點'] }
     ];
 
-    // Master Data
     let masterData = {
         currentIdx: 0,
         settings: {
-            dailyInterest: 0.04,
-            interestHour: 20, 
-            fixedDepositRate: 0.07,
-            fixedDepositDays: 30,
-            gachaCost: 100, // 🔴 新增：抽獎成本
-            adminPin: null,
-            pityRareThreshold: 10, pityLegendaryThreshold: 100, pityBigTarget: 5, 
-            prizeScope: 'global' 
+            dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30,
+            gachaCost: 100, adminPin: null,
+            pityRareThreshold: 10, pityLegendaryThreshold: 100, pityBigTarget: 5, prizeScope: 'global' 
         },
         tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)),
         children: [] 
@@ -570,12 +586,11 @@
     function initMasterData(cloudData) {
         if (cloudData && cloudData.children) {
             masterData = cloudData;
-            // 補齊新設定
             if(!masterData.settings.pityRareThreshold) masterData.settings.pityRareThreshold = 10;
             if(!masterData.settings.pityLegendaryThreshold) masterData.settings.pityLegendaryThreshold = 100;
             if(!masterData.settings.prizeScope) masterData.settings.prizeScope = 'global';
             if(masterData.settings.interestHour === undefined) masterData.settings.interestHour = 20; 
-            if(!masterData.settings.gachaCost) masterData.settings.gachaCost = 100; // 🔴 補齊 gachaCost
+            if(!masterData.settings.gachaCost) masterData.settings.gachaCost = 100;
         } else if (cloudData && cloudData.score !== undefined) {
             let oldData = { ...cloudData };
             delete oldData.tiers;
@@ -594,12 +609,10 @@
     async function loadDataFromCloud() {
         try { 
             const snap = await getDoc(userRef); 
-            // 讀取雲端資料，若無則初始化預設值
             initMasterData(snap.exists() ? snap.data() : null); 
-            // 第一次初始化後立即存檔，確保 Admin 能看到新遊客
             saveData(); 
         }
-        catch (e) { alert("讀取失敗：" + e.message); }
+        catch (e) { Swal.fire('讀取失敗', e.message, 'error'); }
     }
 
     function saveData() {
@@ -608,13 +621,11 @@
         masterData.lastLoginDate = new Date().toISOString(); 
 
         if (currentUser) { 
-            // 寫入 Email 欄位 (遊客則寫入標記)
             masterData.email = currentUser.isAnonymous ? `👻 遊客 (ID:${currentUser.uid.slice(0,5)})` : currentUser.email;
             setDoc(userRef, masterData).then(()=>updateUI()); 
         }
     }
 
-    // === UI & 邏輯 ===
     window.toggleChildDropdown = function() { document.getElementById("childDropdown").classList.toggle("show"); }
     window.onclick = function(e) { if(!e.target.matches('.child-switcher')) { var d = document.getElementsByClassName("dropdown-menu"); for(var i=0; i<d.length; i++) if(d[i].classList.contains('show')) d[i].classList.remove('show'); } }
 
@@ -631,7 +642,6 @@
         updateUI();
     }
 
-    // === PIN 碼與設定 ===
     let currentPinInput = "";
     let pinContext = 'login'; 
     
@@ -667,11 +677,20 @@
     }
 
     window.removePin = function() {
-        if(confirm("確定要移除密碼保護嗎？")) {
-            masterData.settings.adminPin = null;
-            saveData();
-            alert("已移除密碼");
-        }
+        Swal.fire({
+            title: '確定移除密碼？',
+            text: '這樣小孩就可以隨意進入家長後台了喔',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '移除',
+            cancelButtonText: '取消'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                masterData.settings.adminPin = null;
+                saveData();
+                Swal.fire('已移除密碼', '', 'success');
+            }
+        });
     }
 
     window.enterPin = function(num) {
@@ -684,14 +703,21 @@
                         closePin();
                         performSwitchTab('tab-admin');
                     } else {
-                        alert("密碼錯誤");
+                        // 使用 Toast 或簡單震動提示，避免太干擾
+                        navigator.vibrate?.(200);
+                        document.getElementById('pinTitle').innerText = "密碼錯誤，請重試";
+                        document.getElementById('pinTitle').style.color = "red";
+                        setTimeout(() => { 
+                             document.getElementById('pinTitle').innerText = "請輸入家長密碼"; 
+                             document.getElementById('pinTitle').style.color = "#2d3436";
+                        }, 1000);
                         currentPinInput = "";
                         updatePinDisplay();
                     }
                 } else if (pinContext === 'setup') {
                     masterData.settings.adminPin = currentPinInput;
                     saveData();
-                    alert("密碼已設定！");
+                    Swal.fire('密碼已設定！', '', 'success');
                     closePin();
                 }
             }
@@ -710,7 +736,7 @@
         document.getElementById('setPityRare').value = masterData.settings.pityRareThreshold;
         document.getElementById('setPityLeg').value = masterData.settings.pityLegendaryThreshold;
         document.getElementById('setPityTarget').value = masterData.settings.pityBigTarget || 5;
-        document.getElementById('setGachaCost').value = masterData.settings.gachaCost; // 🔴 載入抽獎成本
+        document.getElementById('setGachaCost').value = masterData.settings.gachaCost;
         
         const scope = masterData.settings.prizeScope || 'global';
         document.querySelector(`input[name="prizeScope"][value="${scope}"]`).checked = true;
@@ -759,20 +785,20 @@
         const pRare = parseInt(document.getElementById('setPityRare').value);
         const pLeg = parseInt(document.getElementById('setPityLeg').value);
         const pTarget = parseInt(document.getElementById('setPityTarget').value);
-        const gCost = parseInt(document.getElementById('setGachaCost').value); // 🔴 讀取抽獎成本
+        const gCost = parseInt(document.getElementById('setGachaCost').value);
         const scope = document.querySelector('input[name="prizeScope"]:checked').value;
 
-        if(iHour < 0 || iHour > 23) return alert("時間必須是 0~23");
-        if(!gCost || gCost <= 0) return alert("抽獎花費必須大於 0");
+        if(iHour < 0 || iHour > 23) return Swal.fire('錯誤', "時間必須是 0~23", 'error');
+        if(!gCost || gCost <= 0) return Swal.fire('錯誤', "抽獎花費必須大於 0", 'error');
 
         let totalProb = 0;
         let newProbs = [];
         for(let i=0; i<6; i++) {
             let p = parseFloat(document.getElementById(`prob${i}`).value);
-            if(isNaN(p) || p < 0) return alert("機率錯誤");
+            if(isNaN(p) || p < 0) return Swal.fire('錯誤', "機率錯誤", 'error');
             newProbs.push(p); totalProb += p;
         }
-        if(Math.abs(totalProb - 100) > 0.1) return alert(`機率總和必須為 100% (目前 ${totalProb}%)`);
+        if(Math.abs(totalProb - 100) > 0.1) return Swal.fire('錯誤', `機率總和必須為 100% (目前 ${totalProb}%)`, 'error');
 
         masterData.settings.dailyInterest = dRate;
         masterData.settings.interestHour = iHour;
@@ -781,7 +807,7 @@
         masterData.settings.pityRareThreshold = pRare;
         masterData.settings.pityLegendaryThreshold = pLeg;
         masterData.settings.pityBigTarget = pTarget;
-        masterData.settings.gachaCost = gCost; // 🔴 儲存抽獎成本
+        masterData.settings.gachaCost = gCost;
         masterData.settings.prizeScope = scope;
 
         const targetTiers = getCurrentTiers();
@@ -790,12 +816,12 @@
         saveData();
         updateUI();
         closeSettings();
-        alert("設定已儲存！");
+        Toast.fire({ icon: 'success', title: '設定已儲存' });
     }
 
     window.addNewChildFromSettings = function() {
         const name = document.getElementById('settingsNewChildName').value;
-        if (!name) return alert("請輸入名字");
+        if (!name) return Swal.fire('提示', "請輸入名字", 'warning');
         masterData.children.push({ name: name, data: createNewChildData() });
         document.getElementById('settingsNewChildName').value = '';
         saveData();
@@ -803,18 +829,35 @@
         document.getElementById("childDropdown").innerHTML = masterData.children.map((c, i) => `<div onclick="switchChild(${i})">${c.name}</div>`).join('');
     }
 
-    window.renameChildSettings = function(idx) {
-        const newName = prompt("新名字:", masterData.children[idx].name);
-        if(newName) { masterData.children[idx].name = newName; saveData(); renderSettingsChildList(); switchChild(masterData.currentIdx); }
+    window.renameChildSettings = async function(idx) {
+        const { value: newName } = await Swal.fire({
+            title: '修改名字',
+            input: 'text',
+            inputValue: masterData.children[idx].name,
+            showCancelButton: true
+        });
+        if(newName) { 
+            masterData.children[idx].name = newName; 
+            saveData(); renderSettingsChildList(); switchChild(masterData.currentIdx); 
+        }
     }
 
     window.deleteChildSettings = function(idx) {
-        if (masterData.children.length <= 1) return alert("至少保留一位");
-        if(confirm("確定刪除嗎？")) { 
-            masterData.children.splice(idx, 1); 
-            if(masterData.currentIdx >= masterData.children.length) masterData.currentIdx = 0;
-            saveData(); renderSettingsChildList(); switchChild(masterData.currentIdx);
-        }
+        if (masterData.children.length <= 1) return Swal.fire('無法刪除', "至少保留一位小孩", 'error');
+        Swal.fire({
+            title: '確定刪除嗎？',
+            text: '資料將無法復原',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '刪除'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                masterData.children.splice(idx, 1);
+                if(masterData.currentIdx >= masterData.children.length) masterData.currentIdx = 0;
+                saveData(); renderSettingsChildList(); switchChild(masterData.currentIdx);
+                Swal.fire('已刪除', '', 'success');
+            }
+        });
     }
 
     function renderSettingsChildList() {
@@ -830,29 +873,29 @@
         `).join('');
     }
 
-    // === 遊客綁定邏輯修正：使用 updateEmail 升級帳號 (保留資料) ===
     window.bindGuestAccount = function() {
         const e = document.getElementById('bindEmail').value;
         const p = document.getElementById('bindPass').value;
         
-        if(!e || !p) return alert("請輸入完整 Email 和密碼");
+        if(!e || !p) return Swal.fire('提示', "請輸入完整 Email 和密碼", 'info');
 
         if (currentUser && currentUser.isAnonymous) {
             updateEmail(currentUser, e).then(() => {
                 return updatePassword(currentUser, p);
             }).then(() => {
-                alert("轉正成功！您的資料已保留並綁定至新 Email。");
-                saveData(); // 更新資料庫中的 email 欄位
-                location.reload();
+                Swal.fire('轉正成功！', '您的資料已保留並綁定至新 Email。', 'success').then(() => {
+                   saveData();
+                   location.reload(); 
+                });
             }).catch(err => {
-                alert("綁定失敗：" + err.message + "\n(若是驗證過期，請重新整理網頁後再試一次)");
+                Swal.fire('綁定失敗', err.message + "\n(若是驗證過期，請重新整理網頁後再試一次)", 'error');
             });
         }
     }
     
     window.triggerResetPassword = function() {
         if(currentUser && currentUser.email) {
-            sendPasswordResetEmail(auth, currentUser.email).then(()=>alert("重設信已寄出"));
+            sendPasswordResetEmail(auth, currentUser.email).then(()=>Swal.fire('已寄出', '重設密碼信已發送', 'success'));
         }
     }
 
@@ -881,32 +924,47 @@
     };
 
     window.removePrize = function(tIdx, rIdx) {
-        if(!confirm("刪除？")) return;
-        const currentTiers = getCurrentTiers();
-        currentTiers[tIdx].rewards.splice(rIdx, 1);
-        saveData(); renderPrizeManager();
+        Swal.fire({ title: '刪除此獎品？', icon:'warning', showCancelButton:true }).then((res)=>{
+            if(res.isConfirmed) {
+                const currentTiers = getCurrentTiers();
+                currentTiers[tIdx].rewards.splice(rIdx, 1);
+                saveData(); renderPrizeManager();
+            }
+        });
     };
 
-    window.editPrize = function(tIdx, rIdx) {
+    window.editPrize = async function(tIdx, rIdx) {
         const currentTiers = getCurrentTiers();
-        const newName = prompt("修改:", currentTiers[tIdx].rewards[rIdx]);
+        const { value: newName } = await Swal.fire({
+            title: '修改獎品內容',
+            input: 'text',
+            inputValue: currentTiers[tIdx].rewards[rIdx],
+            showCancelButton: true
+        });
         if(newName) { currentTiers[tIdx].rewards[rIdx] = newName; saveData(); renderPrizeManager(); }
     };
 
     window.restoreDefaultPrizes = function() {
-        if(confirm("恢復預設獎品？")) {
-            const defaultT = JSON.parse(JSON.stringify(DEFAULT_TIERS));
-            if(masterData.settings.prizeScope === 'individual') {
-                data.tiers = defaultT;
-            } else {
-                masterData.tiers = defaultT;
+        Swal.fire({
+            title: '恢復預設獎品？',
+            text: '您新增的客製化獎品將會消失',
+            icon: 'warning',
+            showCancelButton: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const defaultT = JSON.parse(JSON.stringify(DEFAULT_TIERS));
+                if(masterData.settings.prizeScope === 'individual') {
+                    data.tiers = defaultT;
+                } else {
+                    masterData.tiers = defaultT;
+                }
+                saveData(); renderPrizeManager(); 
+                Swal.fire('已恢復', '', 'success');
             }
-            saveData(); renderPrizeManager(); alert("已恢復");
-        }
+        });
     };
 
     window.startGacha = function() {
-        // 🔴 使用設定的成本
         const cost = masterData.settings.gachaCost;
         if (data.score < cost) return;
         
@@ -970,11 +1028,26 @@
                 if (resultTier.rewards && resultTier.rewards.length > 0) {
                     finalReward = resultTier.rewards[Math.floor(Math.random() * resultTier.rewards.length)];
                 }
+                
+                // 動畫結束，改用 SweetAlert 顯示大獎
                 finalResult.innerHTML = `<h2 style="color:${resultTier.color}">${resultTier.name}級獎勵！</h2><p style="font-weight:bold; font-size:1.3rem; color:#333;">${finalReward}</p>`;
+                
                 data.bag.unshift({ tierName: resultTier.name, color: resultTier.color, reward: finalReward, id: Date.now() });
                 saveData();
                 btnDraw.disabled = false; updateUI();
                 if (resultTier.index >= 2) fireConfetti();
+
+                // SweetAlert 展示結果
+                Swal.fire({
+                    title: `${resultTier.name}級獎勵！`,
+                    text: finalReward,
+                    color: resultTier.color,
+                    icon: resultTier.index >= 4 ? 'success' : (resultTier.index >= 2 ? 'info' : undefined),
+                    confirmButtonText: '太棒了！',
+                    confirmButtonColor: resultTier.color,
+                    backdrop: `rgba(0,0,123,0.4)`
+                });
+
                 return;
             }
             stepCount++; currentIdx++; if (currentIdx >= 6) currentIdx = 0;
@@ -986,54 +1059,98 @@
     };
 
     window.useItem = function(idx) {
-        const item = data.bag[idx]; if(!confirm('確定要使用「' + item.reward + '」嗎？')) return;
-        const match = item.reward.match(/增加點數(\d+)點/);
-        if (match) { 
-            const p = parseInt(match[1]); data.score += p; 
-            data.history.push({ date: new Date().toLocaleDateString(), reason: `使用: ${item.reward}`, amount: p });
-            alert(`🎊 已增加 ${p} 點！`); 
-        } else {
-            data.history.push({ date: new Date().toLocaleDateString(), reason: `使用: ${item.reward}`, amount: 0 });
-        }
-        data.bag.splice(idx, 1); saveData();
+        const item = data.bag[idx]; 
+        
+        Swal.fire({
+            title: '確定要使用嗎？',
+            html: `這張卡片是：<b style="color:${item.color}">${item.reward}</b>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '用掉！',
+            cancelButtonText: '再等等',
+            confirmButtonColor: '#ff7675'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const match = item.reward.match(/增加點數(\d+)點/);
+                if (match) { 
+                    const p = parseInt(match[1]); data.score += p; 
+                    data.history.push({ date: new Date().toLocaleDateString(), reason: `使用: ${item.reward}`, amount: p });
+                    Swal.fire('效果發動', `🎊 已增加 ${p} 點！`, 'success'); 
+                } else {
+                    data.history.push({ date: new Date().toLocaleDateString(), reason: `使用: ${item.reward}`, amount: 0 });
+                    Swal.fire('已使用', '記得去找爸爸媽媽兌換喔！', 'success');
+                }
+                data.bag.splice(idx, 1); saveData();
+            }
+        });
     };
 
     window.addPoints = function() {
         const r = document.getElementById('reasonIn').value, p = parseInt(document.getElementById('pointsIn').value);
-        if(!r || !p) return alert("請輸入");
+        if(!r || !p) return Swal.fire('提示', "請輸入原因和點數", 'info');
         data.score += p; 
         data.history.push({ date: new Date().toLocaleDateString(), reason: r, amount: p });
-        saveData(); alert("已發放"); document.getElementById('reasonIn').value = '';
+        saveData(); 
+        Toast.fire({ icon: 'success', title: '點數已發放' });
+        document.getElementById('reasonIn').value = '';
     };
 
     window.createDeposit = function() {
         const amt = parseInt(document.getElementById('depositAmount').value);
-        if(!amt || amt <= 0 || amt > data.score) return alert("金額錯誤");
+        if(!amt || amt <= 0 || amt > data.score) return Swal.fire('錯誤', "點數不足或輸入錯誤", 'error');
         const days = masterData.settings.fixedDepositDays;
         const rate = masterData.settings.fixedDepositRate;
         const estimatedProfit = Math.floor(amt * rate * days);
-        const totalReturn = amt + estimatedProfit;
 
-        if(!confirm(`定存 ${amt} 點？\n鎖定 ${days} 天\n預計獲利 ${estimatedProfit}`)) return;
-        
-        data.score -= amt;
-        const now = new Date(); const end = new Date(now); end.setDate(end.getDate() + days);
-        data.deposits.push({ id: Date.now(), amount: amt, startDate: now.toISOString(), endDate: end.toISOString(), status: 'active' });
-        data.history.push({ date: new Date().toLocaleDateString(), reason: "申請定存", amount: -amt });
-        saveData(); alert("成功");
+        Swal.fire({
+            title: '確定要定存嗎？',
+            html: `存入: <b>${amt}</b> 點<br>鎖定: <b>${days}</b> 天<br>預計獲利: <b style="color:#00b894">+${estimatedProfit}</b> 點<br><br><span style="color:red;font-size:0.9rem">期間內絕對不能解約喔！</span>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '存下去！',
+            confirmButtonColor: '#00b894'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                data.score -= amt;
+                const now = new Date(); const end = new Date(now); end.setDate(end.getDate() + days);
+                data.deposits.push({ id: Date.now(), amount: amt, startDate: now.toISOString(), endDate: end.toISOString(), status: 'active' });
+                data.history.push({ date: new Date().toLocaleDateString(), reason: "申請定存", amount: -amt });
+                saveData(); 
+                Swal.fire('存入成功', '努力存錢是好習慣！', 'success');
+            }
+        });
     };
 
     window.redeemDeposit = function(id) {
         const idx = data.deposits.findIndex(d => d.id === id); if(idx===-1) return;
         const dep = data.deposits[idx];
         const profit = Math.floor(dep.amount * masterData.settings.fixedDepositRate * masterData.settings.fixedDepositDays);
+        
         data.score += (dep.amount + profit);
         data.history.push({ date: new Date().toLocaleDateString(), reason: "定存領回", amount: (dep.amount+profit) });
         data.deposits.splice(idx, 1);
-        saveData(); alert("已領回本金+利息");
+        saveData(); 
+        Swal.fire('定存到期', `本金 ${dep.amount} + 利息 ${profit} 已入帳！`, 'success');
     };
 
-    window.resetAll = function() { if(confirm("清空重置？")) { masterData.children=[{name:"寶貝1",data:createNewChildData()}]; masterData.currentIdx=0; saveData(); switchChild(0); } };
+    window.resetAll = function() { 
+        Swal.fire({
+            title: '⚠️ 危險操作',
+            text: '確定要清空所有資料並重置嗎？這將無法復原！',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: '是的，全部清空'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                masterData.children=[{name:"寶貝1",data:createNewChildData()}]; 
+                masterData.currentIdx=0; 
+                saveData(); 
+                switchChild(0);
+                Swal.fire('已重置', '', 'success');
+            }
+        });
+    };
 
     window.updateTimerAndDeposits = function() {
         const now = new Date();
@@ -1078,7 +1195,12 @@
             if(interest > 0) {
                 data.score += interest;
                 data.history.push({ date: new Date().toLocaleDateString(), reason: "活存利息", amount: interest });
-                alert("利息入帳 +" + interest);
+                Swal.fire({
+                    title: '每日利息發放',
+                    text: `昨天的存款讓你獲得了 ${interest} 點！`,
+                    icon: 'success',
+                    timer: 3000
+                });
             }
             data.lastLoginDate = today; saveData();
         } else if(data.lastLoginDate === "") { data.lastLoginDate = today; saveData(); }
@@ -1104,7 +1226,6 @@
         document.getElementById('pityLegDisp').innerText = data.pityLegendary;
 
         const btn = document.getElementById('btnDraw');
-        // 🔴 顯示動態成本
         const cost = masterData.settings.gachaCost;
         if (data.score < cost) { 
             btn.innerText = `點數不足 (缺${cost - data.score})`; 
@@ -1134,37 +1255,46 @@
     window.exportData = function() { const json = JSON.stringify(masterData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type: "application/json"})); a.download = `reward_backup_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
     window.importData = function(input) { 
         const file = input.files[0]; 
-        if (!file || !confirm("匯入會覆蓋資料，確定？")) return; 
-        const reader = new FileReader(); 
-        reader.onload = function(e) { 
-            try { 
-                const imported = JSON.parse(e.target.result); 
-                if (imported.children) { 
-                    masterData = imported; 
-                } else { 
-                    if(imported.tiers) {
-                        masterData.tiers = imported.tiers;
-                    }
-                    masterData.children = [{name:"寶貝1", data:imported}]; 
-                    masterData.currentIdx=0; 
-                    
-                    if(!masterData.settings) {
-                        masterData.settings = { 
-                            dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30,
-                            pityRareThreshold: 10, pityLegendaryThreshold: 100, prizeScope: 'global'
-                        };
-                    }
-                } 
-                saveData(); 
-                alert("還原成功！"); 
-                switchChild(0); 
-            } catch(err) { 
-                alert("格式錯誤"); 
-            } 
-        }; 
-        reader.readAsText(file); 
-        input.value = ''; 
+        if (!file) return; 
+        Swal.fire({
+            title: '確定要匯入？',
+            text: '這將覆蓋目前的資料，請謹慎操作',
+            icon: 'warning',
+            showCancelButton: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const reader = new FileReader(); 
+                reader.onload = function(e) { 
+                    try { 
+                        const imported = JSON.parse(e.target.result); 
+                        if (imported.children) { 
+                            masterData = imported; 
+                        } else { 
+                            if(imported.tiers) masterData.tiers = imported.tiers;
+                            masterData.children = [{name:"寶貝1", data:imported}]; 
+                            masterData.currentIdx=0; 
+                            if(!masterData.settings) {
+                                masterData.settings = { 
+                                    dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30,
+                                    pityRareThreshold: 10, pityLegendaryThreshold: 100, prizeScope: 'global'
+                                };
+                            }
+                        } 
+                        saveData(); 
+                        Swal.fire('還原成功！', '', 'success'); 
+                        switchChild(0); 
+                    } catch(err) { 
+                        Swal.fire('錯誤', "檔案格式不正確", 'error'); 
+                    } 
+                }; 
+                reader.readAsText(file); 
+            }
+            input.value = ''; 
+        });
     }
+
+    // PWA Service Worker Registration
+    // [已刪除 PWA 註冊碼]
 </script>
 </body>
 </html>

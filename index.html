@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 雲端遊客版</title>
+    <title>超級幸運抽抽樂 - v29 成本自訂版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -219,6 +219,11 @@
 
         <div class="settings-group">
             <h4>🎲 機率與保底</h4>
+            
+            <label class="settings-label" style="color:#e67e22;">💰 單次抽獎花費 (點數)</label>
+            <input type="number" id="setGachaCost" class="admin-input" placeholder="預設 100">
+            <hr style="margin: 15px 0; border:0; border-top:1px dashed #eee;">
+
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
                 <div><small>普通(%)</small><input type="number" id="prob0" class="admin-input"></div>
                 <div><small>罕見(%)</small><input type="number" id="prob1" class="admin-input"></div>
@@ -528,7 +533,7 @@
     });
 
     // === 核心資料結構 ===
-    const COST = 100;
+    // 🔴 COST 已移除，改用 masterData.settings.gachaCost
 
     const DEFAULT_TIERS = [
         { id: 'common', index: 0, name: '普通', color: '#95a5a6', chance: 60, rewards: ['小日記減少一行', '假日玩電動加5分鐘', '假日爸爸陪玩電動5分鐘', '減少看書時間5分鐘'] },
@@ -547,6 +552,7 @@
             interestHour: 20, 
             fixedDepositRate: 0.07,
             fixedDepositDays: 30,
+            gachaCost: 100, // 🔴 新增：抽獎成本
             adminPin: null,
             pityRareThreshold: 10, pityLegendaryThreshold: 100, pityBigTarget: 5, 
             prizeScope: 'global' 
@@ -569,16 +575,18 @@
             if(!masterData.settings.pityLegendaryThreshold) masterData.settings.pityLegendaryThreshold = 100;
             if(!masterData.settings.prizeScope) masterData.settings.prizeScope = 'global';
             if(masterData.settings.interestHour === undefined) masterData.settings.interestHour = 20; 
+            if(!masterData.settings.gachaCost) masterData.settings.gachaCost = 100; // 🔴 補齊 gachaCost
         } else if (cloudData && cloudData.score !== undefined) {
             let oldData = { ...cloudData };
             delete oldData.tiers;
             masterData.tiers = cloudData.tiers || JSON.parse(JSON.stringify(DEFAULT_TIERS));
-            masterData.settings = { dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30 };
+            masterData.settings = { dailyInterest: 0.04, interestHour: 20, fixedDepositRate: 0.07, fixedDepositDays: 30, gachaCost: 100 };
             masterData.children = [{ name: "寶貝1", data: oldData }];
             masterData.children[0].data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
         } else {
             masterData.children = [{ name: "寶貝1", data: createNewChildData() }];
             masterData.settings.interestHour = 20;
+            masterData.settings.gachaCost = 100;
         }
         switchChild(masterData.currentIdx);
     }
@@ -702,6 +710,7 @@
         document.getElementById('setPityRare').value = masterData.settings.pityRareThreshold;
         document.getElementById('setPityLeg').value = masterData.settings.pityLegendaryThreshold;
         document.getElementById('setPityTarget').value = masterData.settings.pityBigTarget || 5;
+        document.getElementById('setGachaCost').value = masterData.settings.gachaCost; // 🔴 載入抽獎成本
         
         const scope = masterData.settings.prizeScope || 'global';
         document.querySelector(`input[name="prizeScope"][value="${scope}"]`).checked = true;
@@ -750,9 +759,11 @@
         const pRare = parseInt(document.getElementById('setPityRare').value);
         const pLeg = parseInt(document.getElementById('setPityLeg').value);
         const pTarget = parseInt(document.getElementById('setPityTarget').value);
+        const gCost = parseInt(document.getElementById('setGachaCost').value); // 🔴 讀取抽獎成本
         const scope = document.querySelector('input[name="prizeScope"]:checked').value;
 
         if(iHour < 0 || iHour > 23) return alert("時間必須是 0~23");
+        if(!gCost || gCost <= 0) return alert("抽獎花費必須大於 0");
 
         let totalProb = 0;
         let newProbs = [];
@@ -770,6 +781,7 @@
         masterData.settings.pityRareThreshold = pRare;
         masterData.settings.pityLegendaryThreshold = pLeg;
         masterData.settings.pityBigTarget = pTarget;
+        masterData.settings.gachaCost = gCost; // 🔴 儲存抽獎成本
         masterData.settings.prizeScope = scope;
 
         const targetTiers = getCurrentTiers();
@@ -894,7 +906,9 @@
     };
 
     window.startGacha = function() {
-        if (data.score < COST) return;
+        // 🔴 使用設定的成本
+        const cost = masterData.settings.gachaCost;
+        if (data.score < cost) return;
         
         if (masterData.settings.prizeScope === 'individual' && !data.tiers) {
             data.tiers = JSON.parse(JSON.stringify(masterData.tiers));
@@ -903,9 +917,9 @@
         let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(f,t,d){let o=audioCtx.createOscillator();let g=audioCtx.createGain();o.type=t;o.frequency.setValueAtTime(f,audioCtx.currentTime);g.gain.setValueAtTime(0.05,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d);}
         
-        data.score -= COST; 
+        data.score -= cost; 
         const now = new Date(); const d = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        data.history.push({ date: d, reason: '參加抽獎', amount: -COST });
+        data.history.push({ date: d, reason: '參加抽獎', amount: -cost });
 
         const tiersSource = getCurrentTiers();
         let rand = Math.random() * 100;
@@ -1090,7 +1104,15 @@
         document.getElementById('pityLegDisp').innerText = data.pityLegendary;
 
         const btn = document.getElementById('btnDraw');
-        if (data.score < COST) { btn.innerText = `點數不足`; btn.disabled = true; } else { btn.innerText = `啟動轉盤 (-${COST}點)`; btn.disabled = false; }
+        // 🔴 顯示動態成本
+        const cost = masterData.settings.gachaCost;
+        if (data.score < cost) { 
+            btn.innerText = `點數不足 (缺${cost - data.score})`; 
+            btn.disabled = true; 
+        } else { 
+            btn.innerText = `啟動轉盤 (-${cost}點)`; 
+            btn.disabled = false; 
+        }
         
         const bagList = document.getElementById('bagList'); bagList.innerHTML = '';
         if (data.bag.length === 0) document.getElementById('bagEmpty').style.display = 'block';

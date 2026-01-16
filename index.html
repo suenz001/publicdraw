@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>超級幸運抽抽樂 - 手機優化版</title>
+    <title>超級幸運抽抽樂 - v27 時間戳記版</title>
     <style>
         :root {
             --bg-color: #f0f2f5;
@@ -599,12 +599,15 @@
         masterData.settings.dailyInterest = parseFloat(masterData.settings.dailyInterest.toFixed(4));
         masterData.settings.fixedDepositRate = parseFloat(masterData.settings.fixedDepositRate.toFixed(4));
         
+        // 🆕 v27 核心：記錄最後上線時間
+        masterData.lastLoginDate = new Date().toISOString(); 
+
         if (isGuest) { 
             localStorage.setItem('kidGacha_v27', JSON.stringify(masterData)); 
             updateUI(); 
         }
         else if (currentUser) { 
-            // 🆕 v26 核心修正：將 Email 寫入資料庫，供 Admin 讀取
+            // 🆕 v26 核心：Email 回寫
             masterData.email = currentUser.email;
             setDoc(userRef, masterData).then(()=>updateUI()); 
         }

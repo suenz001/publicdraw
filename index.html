@@ -106,7 +106,8 @@
         .bank-rate { font-size: 1.5rem; font-weight: bold; }
         .bank-desc { font-size: 0.9rem; opacity: 0.9; margin-bottom: 10px; }
         .bank-timer { font-family: monospace; font-size: 1.1rem; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; margin-top: 10px; display: inline-block; font-weight: bold;}
-        
+        .bank-formula { font-size: 0.8rem; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 10px; margin-top: 15px; display: inline-block; }
+
         .deposit-form { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .deposit-input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; font-size: 1.2rem; text-align: center; }
         .btn-deposit { width: 100%; padding: 12px; background: #00b894; color: white; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
@@ -381,7 +382,8 @@
     <div class="bank-card">
         <div class="bank-rate">📈 活存利率：<span id="dispDailyRate">4%</span> / 天</div>
         <div class="bank-desc">每晚 <strong><span id="dispInterestHour">20</span>:00</strong> 結算，記得來領利息！</div>
-        <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:5px; border-radius:5px;">
+        <div class="bank-formula">💡 每日利息 = 目前點數 × 利率</div>
+        <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:5px; border-radius:5px; margin-top:10px;">
             上次領息：<span id="lastInterestDate">無</span>
         </div>
         <div style="text-align:center; margin-top:10px;">
@@ -393,7 +395,8 @@
         <h3 style="margin-top:0; color:#2d3436;">🔒 申請超級定存</h3>
         <p style="font-size:0.9rem; color:#666; margin-bottom:10px;">
             鎖定 <strong><span id="dispFixedDays">30</span> 天</strong>，每天獲利 <strong><span id="dispFixedRate">7%</span></strong>！<br>
-            <span style="color:#d63031;">(超高報酬，但期間絕對不能領出)</span>
+            <span style="color:#d63031;">(超高報酬，但期間絕對不能領出)</span><br>
+            <span style="font-size:0.8rem; color:#888;">💡 利息 = 本金 × 日利率 × 天數 (單利計算)</span>
         </p>
         <input type="number" id="depositAmount" class="deposit-input" placeholder="輸入要存的點數">
         <button class="btn-deposit" onclick="createDeposit()">確認存入</button>
@@ -588,7 +591,7 @@
     };
 
     let data = null; 
-    let currentDisplayedScore = 0; // 用於動畫顯示
+    let currentDisplayedScore = 0; 
 
     function createNewChildData() {
         return { score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)) };
@@ -621,7 +624,6 @@
         try { 
             const snap = await getDoc(userRef); 
             initMasterData(snap.exists() ? snap.data() : null); 
-            // 初始化顯示分數
             currentDisplayedScore = data.score;
             document.getElementById('scoreDisplay').innerText = data.score;
             saveData(); 
@@ -652,7 +654,6 @@
         const dd = document.getElementById("childDropdown");
         dd.innerHTML = masterData.children.map((c, i) => `<div onclick="switchChild(${i})">${c.name} ${i === masterData.currentIdx ? '✔' : ''}</div>`).join('');
         
-        // 切換小孩時，分數也直接跳轉
         currentDisplayedScore = data.score;
         document.getElementById('scoreDisplay').innerText = data.score;
 
@@ -721,7 +722,6 @@
                         closePin();
                         performSwitchTab('tab-admin');
                     } else {
-                        // 使用 Toast 或簡單震動提示，避免太干擾
                         navigator.vibrate?.(200);
                         document.getElementById('pinTitle').innerText = "密碼錯誤，請重試";
                         document.getElementById('pinTitle').style.color = "red";
@@ -745,7 +745,6 @@
     window.closePin = function() { document.getElementById('pinModal').style.display = 'none'; }
     function updatePinDisplay() { document.getElementById('pinDisplay').innerText = "*".repeat(currentPinInput.length); }
 
-    // 忘記 PIN 碼的處理功能
     window.forgotPin = async function() {
         if (currentUser && currentUser.isAnonymous) {
             return Swal.fire('遊客帳號', '遊客帳號無法重置 PIN 碼，若真的忘記請清除瀏覽器資料重來。', 'info');
@@ -765,14 +764,11 @@
             try {
                 const credential = EmailAuthProvider.credential(currentUser.email, password);
                 await reauthenticateWithCredential(currentUser, credential);
-                
-                // 驗證成功，清除 PIN
                 masterData.settings.adminPin = null;
                 await saveData();
                 closePin();
                 Swal.fire('重置成功', 'PIN 碼已移除，您現在可以進入家長後台了。', 'success');
                 performSwitchTab('tab-admin');
-                
             } catch (error) {
                 console.error(error);
                 Swal.fire('驗證失敗', '密碼錯誤，無法重置 PIN 碼。', 'error');
@@ -1260,6 +1256,7 @@
             html += `<div class="deposit-item">
                         <div class="deposit-header"><span>本金: ${d.amount}</span><span style="color:#00b894;">(+${profit})</span></div>
                         <div style="font-size:0.75rem; color:#aaa; margin-top:2px;">📅 ${startStr}</div>
+                        <div style="font-size:0.75rem; color:#888;">💡 單利計算: ${d.amount} × ${masterData.settings.fixedDepositRate} × ${masterData.settings.fixedDepositDays} = ${profit}</div>
                         <div class="deposit-time">${timeStr}</div>
                         <button class="btn-redeem" onclick="redeemDeposit(${d.id})" ${isMature?'':'disabled'}>${isMature?'領取':'未到期'}</button>
                      </div>`;
@@ -1267,7 +1264,6 @@
         list.innerHTML = html;
     };
 
-    // 點數滾動動畫邏輯
     function animateScore(start, end, duration) {
         if (start === end) return;
         const range = end - start;
@@ -1313,7 +1309,6 @@
     }
 
     function updateUI() {
-        // 執行分數動畫
         if (currentDisplayedScore !== data.score) {
             animateScore(currentDisplayedScore, data.score, 1000);
             currentDisplayedScore = data.score;

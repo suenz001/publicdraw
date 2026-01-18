@@ -386,6 +386,7 @@
         
         <div class="bank-est">
             💰 今日預估利息：<span id="estInterestVal" style="color:#ffeaa7; font-size:1.3rem;">0</span> 點
+            <div id="estInterestFormula" style="font-size:0.85rem; color:#dfe6e9; margin-top:5px;">(0 × 0.02 = 0)</div>
         </div>
 
         <div class="bank-formula">💡 活存採複利計算 (利滾利)</div>
@@ -1343,8 +1344,12 @@
         document.getElementById('dispFixedDays').innerText = masterData.settings.fixedDepositDays;
         
         // 新增：顯示今日預估利息
-        const todayEst = Math.floor(data.score * masterData.settings.dailyInterest);
+        const dailyRate = masterData.settings.dailyInterest;
+        const todayEst = Math.floor(data.score * dailyRate);
         document.getElementById('estInterestVal').innerText = todayEst;
+        
+        // 新增：顯示算式
+        document.getElementById('estInterestFormula').innerText = `(目前點數 ${data.score} × 利率 ${dailyRate} = ${todayEst})`;
 
         const currentTiers = getCurrentTiers();
         currentTiers.forEach((t, i) => {

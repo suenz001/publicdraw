@@ -70,7 +70,8 @@
         .dropdown-menu div { color: black; padding: 12px 16px; text-decoration: none; display: block; cursor: pointer; border-bottom: 1px solid #f1f1f1; }
         .dropdown-menu div:hover { background-color: #f1f1f1; }
         .show { display: block; }
-        .points-val { font-size: 3rem; font-weight: 800; color: #fab1a0; margin: 0; line-height: 1.2; }
+        
+        .points-val { font-size: 3rem; font-weight: 800; color: #fab1a0; margin: 0; line-height: 1.2; font-variant-numeric: tabular-nums; /* 避免數字跳動時寬度改變 */ }
         .points-label { font-size: 0.9rem; color: #888; font-weight: bold; }
 
         .nav { display: flex; background: white; margin: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 5px; }
@@ -158,6 +159,7 @@
         .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .pin-btn { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #ddd; background: white; font-size: 1.5rem; font-weight: bold; cursor: pointer; color: #333; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .pin-btn:active { background: #f0f0f0; transform: scale(0.95); }
+        .btn-forgot-pin { margin-top: 30px; border: none; background: none; color: #999; text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
         
         .child-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; margin-bottom: 5px; border-radius: 8px; }
 
@@ -200,6 +202,7 @@
         <div class="pin-btn" onclick="enterPin(0)">0</div>
         <div class="pin-btn" style="background:#dfe6e9; font-size:1rem;" onclick="clearPin()">←</div>
     </div>
+    <button class="btn-forgot-pin" onclick="forgotPin()">忘記 PIN 碼？</button>
 </div>
 
 <div id="settingsModal">
@@ -433,7 +436,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // SweetAlert Mixin for small toasts
@@ -585,6 +588,7 @@
     };
 
     let data = null; 
+    let currentDisplayedScore = 0; // 用於動畫顯示
 
     function createNewChildData() {
         return { score: 0, bag: [], history: [], pityRare: 0, pityLegendary: 0, lastLoginDate: "", deposits: [], tiers: JSON.parse(JSON.stringify(DEFAULT_TIERS)) };
@@ -617,6 +621,9 @@
         try { 
             const snap = await getDoc(userRef); 
             initMasterData(snap.exists() ? snap.data() : null); 
+            // 初始化顯示分數
+            currentDisplayedScore = data.score;
+            document.getElementById('scoreDisplay').innerText = data.score;
             saveData(); 
         }
         catch (e) { Swal.fire('讀取失敗', e.message, 'error'); }
@@ -645,6 +652,10 @@
         const dd = document.getElementById("childDropdown");
         dd.innerHTML = masterData.children.map((c, i) => `<div onclick="switchChild(${i})">${c.name} ${i === masterData.currentIdx ? '✔' : ''}</div>`).join('');
         
+        // 切換小孩時，分數也直接跳轉
+        currentDisplayedScore = data.score;
+        document.getElementById('scoreDisplay').innerText = data.score;
+
         checkDailyInterest();
         updateUI();
     }
@@ -733,6 +744,41 @@
     window.clearPin = function() { currentPinInput = currentPinInput.slice(0, -1); updatePinDisplay(); }
     window.closePin = function() { document.getElementById('pinModal').style.display = 'none'; }
     function updatePinDisplay() { document.getElementById('pinDisplay').innerText = "*".repeat(currentPinInput.length); }
+
+    // 忘記 PIN 碼的處理功能
+    window.forgotPin = async function() {
+        if (currentUser && currentUser.isAnonymous) {
+            return Swal.fire('遊客帳號', '遊客帳號無法重置 PIN 碼，若真的忘記請清除瀏覽器資料重來。', 'info');
+        }
+
+        const { value: password } = await Swal.fire({
+            title: '重置家長密碼鎖',
+            text: '為了安全，請輸入您的「登入密碼」來驗證身分。驗證成功後 PIN 碼將被移除。',
+            input: 'password',
+            inputPlaceholder: '請輸入帳號密碼',
+            showCancelButton: true,
+            confirmButtonText: '驗證並重置',
+            cancelButtonText: '取消'
+        });
+
+        if (password) {
+            try {
+                const credential = EmailAuthProvider.credential(currentUser.email, password);
+                await reauthenticateWithCredential(currentUser, credential);
+                
+                // 驗證成功，清除 PIN
+                masterData.settings.adminPin = null;
+                await saveData();
+                closePin();
+                Swal.fire('重置成功', 'PIN 碼已移除，您現在可以進入家長後台了。', 'success');
+                performSwitchTab('tab-admin');
+                
+            } catch (error) {
+                console.error(error);
+                Swal.fire('驗證失敗', '密碼錯誤，無法重置 PIN 碼。', 'error');
+            }
+        }
+    }
 
     window.openSettings = function() {
         document.getElementById('settingsModal').style.display = 'block';
@@ -1065,7 +1111,6 @@
                     finalReward = resultTier.rewards[Math.floor(Math.random() * resultTier.rewards.length)];
                 }
                 
-                // 動畫結束，改用 SweetAlert 顯示大獎
                 finalResult.innerHTML = `<h2 style="color:${resultTier.color}">${resultTier.name}級獎勵！</h2><p style="font-weight:bold; font-size:1.3rem; color:#333;">${finalReward}</p>`;
                 
                 data.bag.unshift({ tierName: resultTier.name, color: resultTier.color, reward: finalReward, id: Date.now() });
@@ -1073,7 +1118,6 @@
                 btnDraw.disabled = false; updateUI();
                 if (resultTier.index >= 2) fireConfetti();
 
-                // SweetAlert 展示結果
                 Swal.fire({
                     title: `${resultTier.name}級獎勵！`,
                     text: finalReward,
@@ -1223,6 +1267,32 @@
         list.innerHTML = html;
     };
 
+    // 點數滾動動畫邏輯
+    function animateScore(start, end, duration) {
+        if (start === end) return;
+        const range = end - start;
+        const minTimer = 50;
+        let stepTime = Math.abs(Math.floor(duration / range));
+        stepTime = Math.max(stepTime, minTimer);
+        const startTime = new Date().getTime();
+        const endTime = startTime + duration;
+        let timer;
+        const obj = document.getElementById('scoreDisplay');
+        
+        function run() {
+            const now = new Date().getTime();
+            const remaining = Math.max((endTime - now) / duration, 0);
+            const value = Math.round(end - (remaining * range));
+            obj.innerText = value;
+            if (value == end) {
+                clearInterval(timer);
+            }
+        }
+        
+        timer = setInterval(run, stepTime);
+        run();
+    }
+
     function checkDailyInterest() {
         const now = new Date(); const today = now.toDateString();
         if(now.getHours() < masterData.settings.interestHour) return;
@@ -1243,7 +1313,14 @@
     }
 
     function updateUI() {
-        document.getElementById('scoreDisplay').innerText = data.score;
+        // 執行分數動畫
+        if (currentDisplayedScore !== data.score) {
+            animateScore(currentDisplayedScore, data.score, 1000);
+            currentDisplayedScore = data.score;
+        } else {
+            document.getElementById('scoreDisplay').innerText = data.score;
+        }
+
         document.getElementById('dispDailyRate').innerText = parseFloat((masterData.settings.dailyInterest * 100).toFixed(2)) + '%';
         document.getElementById('dispInterestHour').innerText = masterData.settings.interestHour;
         document.getElementById('dispFixedRate').innerText = parseFloat((masterData.settings.fixedDepositRate * 100).toFixed(2)) + '%';

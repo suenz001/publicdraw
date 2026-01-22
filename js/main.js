@@ -181,9 +181,16 @@ function startSocialListeners() {
 
             if(!data.friends) data.friends = [];
             if(!data.friends.some(f => f.uid === req.toUid)) {
-                data.friends.push({ uid: req.toUid, name: `好友 (ID:${req.toUid.slice(0,5)})` });
+                // 修改處：優先使用資料庫存的 toName，如果沒有(舊資料)才顯示 ID
+                const friendName = req.toName || `好友 (ID:${req.toUid.slice(0,5)})`;
+
+                data.friends.push({ uid: req.toUid, name: friendName });
                 saveData(); 
-                Swal.fire('好友通知', `對方同意了你的邀請！`, 'success');
+                Swal.fire('好友通知', `${friendName} 同意了你的邀請！`, 'success');
+                renderFriendList(); // 立即刷新列表
+
+                // 加好友後，立刻刷新市集以顯示該好友商品
+                if(lastMarketSnapshot) renderMarketListUI(lastMarketSnapshot);
             }
             deleteDoc(doc(db, "friend_requests", d.id)); 
         });
@@ -723,12 +730,14 @@ function onPostClick(uid, name, targetChildIdx) {
         title: `想跟 ${name} 當朋友嗎？`, input: 'text', inputLabel: '傳送打招呼訊息', inputValue: '很高興認識你，想跟你做朋友！', showCancelButton: true, confirmButtonText: '送出邀請 💌'
     }).then((result) => {
         if (result.isConfirmed && result.value) {
-            sendFriendRequest(uid, result.value, targetChildIdx);
+            // 修改：多傳遞一個 name 參數
+            sendFriendRequest(uid, result.value, targetChildIdx, name);
         }
     });
 }
 
-function sendFriendRequest(targetUid, msg, targetChildIdx) {
+// 修改：接收 targetName 參數
+function sendFriendRequest(targetUid, msg, targetChildIdx, targetName) {
     const myName = masterData.children[masterData.currentIdx].name;
     addDoc(collection(db, "friend_requests"), {
         fromUid: currentUser.uid,
@@ -736,6 +745,7 @@ function sendFriendRequest(targetUid, msg, targetChildIdx) {
         fromName: myName,
         toUid: targetUid,
         toChildIdx: targetChildIdx, // 收件小孩 (精準投遞!)
+        toName: targetName, // 修改：將對方的名字也存入資料庫
         message: msg,
         status: 'pending',
         timestamp: Date.now()

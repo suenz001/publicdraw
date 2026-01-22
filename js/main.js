@@ -768,6 +768,9 @@ async function acceptFriend(req, friendData) {
     await updateDoc(doc(db, "friend_requests", req.id), { status: 'accepted' });
     Swal.fire('已成為好友！', '現在可以在市集看到他的東西了', 'success');
     renderFriendList();
+
+    // 新增：加好友後，強制使用「最後一次的市集快照」重新渲染市集列表
+    if(lastMarketSnapshot) renderMarketListUI(lastMarketSnapshot);
 }
 
 function renderFriendList() {
@@ -779,9 +782,12 @@ function renderFriendList() {
         return;
     }
     
+    // 修改：在名字後面加上灰色 ID
     let html = data.friends.map((f, i) => `
         <div class="friend-chip">
-            <span onclick="Swal.fire('${f.name}')">${f.name}</span> 
+            <span onclick="Swal.fire('${f.name}')">
+                ${f.name} <span style="color:#b2bec3; font-size:0.8rem; font-weight:normal;">(ID:${f.uid.slice(0,5)})</span>
+            </span> 
             <small onclick="removeFriend(${i})" style="cursor:pointer; color:#ff7675; margin-left:5px;">✖</small>
         </div>
     `).join('');

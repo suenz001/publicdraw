@@ -1268,7 +1268,8 @@ function showChangelog() {
                 <h4 style="color:#4a90e2; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:5px;">💬 廣場與社交 (New!)</h4>
                 <ul style="margin-top:5px; padding-left:20px; color:#555;">
                     <li><b>留言板：</b>可以在廣場發佈心情，還能攜帶 3 個你最自豪的「成就徽章」出來炫耀！</li>
-                    <li><b>好友系統：</b>在留言板點擊名字即可發送好友邀請。成為好友後，即使家長開啟隱藏市集功能，你們也能互相看到對方的商品。</li>
+                    <li><b>好友系統：</b>在留言板點擊名字即可發送好友邀請。</li>
+                    <li><b>安全機制：</b>為了避免亂買東西，<b>需家長在設定中開啟「允許查看好友市集」</b>，你們才能在市集看到朋友賣的東西喔！(預設只能看到自家人的)</li>
                 </ul>
                 
                 <p style="text-align:center; color:#aaa; font-size:0.8rem; margin-top:20px;">
@@ -1280,7 +1281,7 @@ function showChangelog() {
         confirmButtonText: '太棒了！',
         confirmButtonColor: '#e84393'
     });
-}
+}}
 // === 全域函式綁定 ===
 window.switchChild = switchChild;
 window.switchTab = switchTab;

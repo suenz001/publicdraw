@@ -1281,7 +1281,7 @@ function showChangelog() {
         confirmButtonText: '太棒了！',
         confirmButtonColor: '#e84393'
     });
-}}
+}
 // === 全域函式綁定 ===
 window.switchChild = switchChild;
 window.switchTab = switchTab;

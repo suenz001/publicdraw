@@ -1189,18 +1189,32 @@ function showAppGuide() {
         title: '📖 App 使用戰略指南',
         html: `
             <div style="text-align:left; font-size:0.9rem; line-height:1.6; max-height: 400px; overflow-y: auto; padding: 0 10px;">
+                
+                <h4 style="color:#2d3436; margin-bottom:5px; background:#dfe6e9; padding:5px 10px; border-radius:5px;">👨‍👩‍👧‍👦 家長專區：多寶貝與客製化</h4>
+                <ul style="margin-top:5px; padding-left:20px; color:#555;">
+                    <li><b>管理多位小孩：</b>
+                        家中有多個寶貝嗎？點擊畫面最上方的<b>「小孩名字」</b>，即可快速切換不同小孩的帳戶。若要新增小孩，請至「家長設定」頁面操作。
+                    </li>
+                    <li><b>客製化獎品：</b>
+                        覺得預設獎品不適合？進入<b>「家長設定」</b> > <b>「獎品內容」</b>，您可以自由修改每一級別的獎品名稱，或新增更多選項。
+                    </li>
+                    <li><b>共用 vs 獨立獎品庫：</b>
+                        您可以選擇<b>「全家共用」</b>同一套獎品清單，或是切換為<b>「個別小孩設定」</b>，讓哥哥愛玩的電動、妹妹喜歡的貼紙分開管理！
+                    </li>
+                </ul>
+
                 <h4 style="color:#4a90e2; margin-bottom:5px;">💰 點數怎麼來？</h4>
                 <ul style="margin-top:0; padding-left:20px; color:#555;">
-                    <li><b>家長發放：</b> 幫忙做家事、表現好，請爸媽發點數！</li>
-                    <li><b>銀行利息：</b> 每天晚上 <b>20:00</b> 只要有點數在身上，就會自動生利息 (可客製化時間)(複利滾存)。</li>
+                    <li><b>家長發放：</b> 幫忙做家事、表現好，請爸媽從「家長設定」發點數！</li>
+                    <li><b>銀行利息：</b> 每天晚上 <b>20:00</b> 只要有點數在身上，就會自動生利息 (複利滾存)。</li>
                     <li><b>市集拍賣：</b> 把不需要的卡片賣給兄弟姊妹或朋友。</li>
                 </ul>
 
                 <h4 style="color:#e67e22; margin-bottom:5px;">🎰 抽獎與保底機制</h4>
                 <ul style="margin-top:0; padding-left:20px; color:#555;">
                     <li>每次抽獎消耗 <b>100 點</b>。</li>
-                    <li><b>小保底：</b> 連續 10 次沒抽到稀有(藍色)以上，第 10 次必中！(可客製化)</li>
-                    <li><b>大保底：</b> 連續 100 次沒中神話/傳奇大獎，第 100 次必中！(可客製化)</li>
+                    <li><b>小保底：</b> 連續 10 次沒抽到稀有(藍色)以上，第 10 次必中！</li>
+                    <li><b>大保底：</b> 連續 100 次沒中神話/傳奇大獎，第 100 次必中！</li>
                     <li><span style="color:#e74c3c;">提示：</span> 運氣不好時別氣餒，保底進度會一直累積喔！</li>
                 </ul>
 
@@ -1213,7 +1227,6 @@ function showAppGuide() {
                 <h4 style="color:#8e44ad; margin-bottom:5px;">🤝 社交與市集</h4>
                 <ul style="margin-top:0; padding-left:20px; color:#555;">
                     <li>可以在<b>市集</b>買別人的卡片，也能自己上架 (會收 10% 交易稅)。</li>
-                    <li>可以加朋友，互相查看對方的拍賣品 (需家長開啟權限)。</li>
                     <li>同一家人的兄弟姊妹，可以直接互相購買，不需要加好友喔！</li>
                 </ul>
             </div>
@@ -1223,7 +1236,6 @@ function showAppGuide() {
         confirmButtonColor: '#4a90e2'
     });
 }
-
 function showChangelog() {
     Swal.fire({
         title: '📣 v2.0 重大更新公告',
